@@ -20,13 +20,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt'){
     }
 
 
-    async validate(payload: {sub: string, username: string, roles: Role[]} ): Promise<SafeUser> {
+    async validate(payload: {sub: string, username: string, roles: Role[], tokenVersion:number} ): Promise<SafeUser> {
         const user = await this.prisma.user.findUnique({
             where: {username: payload.username}
         })
 
-        if(!user){
-            throw new UnauthorizedException('User not found!')
+        if(!user || user.tokenVersion !== payload.tokenVersion){
+            throw new UnauthorizedException('Token is not valid!')
         }
         const {passwordHash, ...result} = user
         return result 

@@ -4,7 +4,6 @@ import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
-import { Role } from '@prisma/client';
 import { updateActiveRoleDto } from './dto/update-active-role.dto';
 
 @Injectable()
@@ -31,7 +30,7 @@ export class AuthService {
             }
         })
 
-        const {passwordHash, ...user} = result
+        const {passwordHash: _, ...user} = result
         return user
     }
 
@@ -48,16 +47,28 @@ export class AuthService {
             throw new UnauthorizedException("Username atau Password salah")
         }
 
+        // BLM DI GENERATE PRISMA DAN DI MIGRATIONS
         const payload = {
             sub: existedUser.id,
             username: existedUser.username,
-            roles: existedUser.roles
+            roles: existedUser.roles,
+            tokenVersion: existedUser.tokenVersion
         }
         const token = await this.jwt.signAsync(payload)
         return { 
             accessToken: token,
             data: payload
         }
+    }
+
+    async logout(userId:string){
+        await this.prisma.user.update({
+            where: {id: userId},
+            data: {
+                tokenVersion: {increment:1}
+            }
+        })
+
     }
 
     async updateActiveRole(userId:string, dto:updateActiveRoleDto){
@@ -80,7 +91,7 @@ export class AuthService {
                 activeRole: dto.activeRole
             }
         })
-        const {passwordHash, ...updatedUser} = result
+        const {passwordHash: _, ...updatedUser} = result
         return updatedUser;
     }
     

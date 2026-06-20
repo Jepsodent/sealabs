@@ -36,6 +36,12 @@ export class AuthController {
         return this.authService.updateActiveRole(user.id, dto)
     }
 
+    // blm di migration
+    @Post('logout')
+    async logout(@CurrentUser() user:SafeUser){
+        return this.authService.logout(user.id)
+    }
+
     @Get('penjual-bodong')
     @UseGuards(JwtAuthGuard, RoleGuard)
     @CurrentRole(Role.SELLER)
