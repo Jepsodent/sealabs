@@ -1,7 +1,5 @@
 import { Role } from "@prisma/client"
 import { ArrayNotEmpty, IsArray, IsEnum, IsNotEmpty, IsString, MinLength } from "class-validator"
-import { measureMemory } from "vm"
-
 
 
 export class RegisterDto{ 
