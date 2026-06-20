@@ -1,0 +1,38 @@
+generator client {
+  provider     = "prisma-client-js"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  roles        Role[]
+  activeRole   Role?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  tokenVersion Int      @default(0)
+
+  @@map("users")
+}
+
+model AppReview {
+  id           String   @id @default(uuid())
+  reviewerName String   @default("Guest")
+  rating       Int
+  comment      String
+  createdAt    DateTime @default(now())
+
+  @@map("app_reviews")
+}
+
+enum Role {
+  BUYER
+  SELLER
+  DRIVER
+  ADMIN
+}
