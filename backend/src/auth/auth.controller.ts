@@ -9,6 +9,7 @@ import { updateActiveRoleDto } from './dto/update-active-role.dto';
 import { RoleGuard } from './guards/active-role.guard';
 import { CurrentRole } from './decorator/current-role.decorator';
 import { Role } from '@prisma/client';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('auth')
 export class AuthController {
@@ -25,12 +26,14 @@ export class AuthController {
     }
 
     @Get("me")
+    @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     profile(@CurrentUser() user:SafeUser){  
         return user
     }
 
     @Patch('active-role')
+    @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     async updateRole(@CurrentUser() user:SafeUser, @Body() dto:updateActiveRoleDto){
         return this.authService.updateActiveRole(user.id, dto)
@@ -38,12 +41,15 @@ export class AuthController {
 
     // blm di migration
     @Post('logout')
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
     async logout(@CurrentUser() user:SafeUser){
         return this.authService.logout(user.id)
     }
 
     @Get('penjual-bodong')
     @UseGuards(JwtAuthGuard, RoleGuard)
+    @ApiBearerAuth()
     @CurrentRole(Role.SELLER)
     sellerOnly(){
         return 'Ini cuma bisa diakses penjual'
