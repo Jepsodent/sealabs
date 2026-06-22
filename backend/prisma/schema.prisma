@@ -39,21 +39,22 @@ enum Role {
 }
 
 model Store {
-  id        String    @id @default(uuid())
-  ownerId   String    @unique
-  owner     User      @relation(references: [id], fields: [ownerId], onDelete: Cascade)
-  name      String    @unique
-  products  Product[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id          String    @id @default(uuid())
+  ownerId     String    @unique
+  owner       User      @relation(references: [id], fields: [ownerId], onDelete: Cascade)
+  name        String    @unique
+  description String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@map("stores")
 }
 
 model Product {
-  id          String @id @default(uuid())
+  id          String  @id @default(uuid())
   name        String
-  description String
+  description String?
   price       Int
   stock       Int
   imageUrl    String
@@ -63,5 +64,6 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([storeId, name])
   @@map("products")
 }
