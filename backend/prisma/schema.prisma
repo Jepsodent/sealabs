@@ -52,9 +52,9 @@ model Store {
 }
 
 model Product {
-  id          String @id @default(uuid())
+  id          String  @id @default(uuid())
   name        String
-  description String
+  description String?
   price       Int
   stock       Int
   imageUrl    String
@@ -64,5 +64,6 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([storeId, name])
   @@map("products")
 }
