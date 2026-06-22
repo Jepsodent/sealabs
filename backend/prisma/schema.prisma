@@ -16,6 +16,7 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   tokenVersion Int      @default(0)
+  store        Store?
 
   @@map("users")
 }
@@ -35,4 +36,32 @@ enum Role {
   SELLER
   DRIVER
   ADMIN
+}
+
+model Store {
+  id        String    @id @default(uuid())
+  ownerId   String    @unique
+  owner     User      @relation(references: [id], fields: [ownerId], onDelete: Cascade)
+  name      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("stores")
+}
+
+model Product {
+  id          String @id @default(uuid())
+  name        String
+  description String
+  price       Int
+  stock       Int
+  imageUrl    String
+
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("products")
 }
