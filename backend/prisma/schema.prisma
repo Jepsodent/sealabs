@@ -39,13 +39,14 @@ enum Role {
 }
 
 model Store {
-  id        String    @id @default(uuid())
-  ownerId   String    @unique
-  owner     User      @relation(references: [id], fields: [ownerId], onDelete: Cascade)
-  name      String    @unique
-  products  Product[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id          String    @id @default(uuid())
+  ownerId     String    @unique
+  owner       User      @relation(references: [id], fields: [ownerId], onDelete: Cascade)
+  name        String    @unique
+  description String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@map("stores")
 }
