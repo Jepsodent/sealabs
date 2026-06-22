@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProductDto } from './dto/create-products.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -46,6 +46,17 @@ export class ProductsService {
       if(!store){
         throw new BadRequestException("Anda harus punya toko terlebih dahulu!")
       }
+      const product = await this.prisma.product.findUnique({
+        where:{ 
+          storeId_name: {
+            storeId: store.id,
+            name: dto.name
+          }
+        }
+      })
+      if(product){
+        throw new ConflictException("Produk denan nama tersebut sudah ada di toko Anda!")
+      }
       return this.prisma.product.create({
         data:{ 
           description: dto.description,
@@ -89,6 +100,20 @@ export class ProductsService {
       if(store.id !== product.storeId){
         throw new ForbiddenException("Anda tidak memiliki akses ke product")
       }
+
+      if(dto.name){
+        const existedProduct = await this.prisma.product.findFirst({
+          where:{
+            storeId: store.id,
+            name:dto.name,
+            id: {not: productId}
+          }
+        })
+        if(existedProduct){
+          throw new ConflictException("Produk dengan nama tersebut sudah ada di toko anda!")
+        }
+      }
+
 
       if (Object.keys(dto).length === 0){
         throw new BadRequestException('No fields to update')

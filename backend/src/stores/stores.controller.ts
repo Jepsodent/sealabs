@@ -8,6 +8,7 @@ import { StoresService } from './stores.service';
 import { CurrentUser } from 'src/auth/decorator/current-user.decorator';
 import { type SafeUser } from 'src/auth/types/User';
 import { EditStoreDto } from './dto/edit-store.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('stores')
 
@@ -16,18 +17,21 @@ export class StoresController {
     
     @UseGuards(JwtAuthGuard, RoleGuard)
     @CurrentRole(Role.SELLER)
+    @ApiBearerAuth()
     @Post()
     async createStore(@Body() dto:CreateStoreDto, @CurrentUser() user: SafeUser){
         return this.storeService.createStore(dto, user.id)
     }
     @UseGuards(JwtAuthGuard, RoleGuard)
     @CurrentRole(Role.SELLER)
+    @ApiBearerAuth()
     @Get('/my-store')
     async getMyStore(@CurrentUser() user:SafeUser){
         return this.storeService.getMyStore(user.id)
     }
     @UseGuards(JwtAuthGuard, RoleGuard)
     @CurrentRole(Role.SELLER)
+    @ApiBearerAuth()
     @Patch('/my-store')
     async updateMyStore (@Body() dto: EditStoreDto, @CurrentUser() user:SafeUser ){
         return this.storeService.updateMyStore(dto, user.id)

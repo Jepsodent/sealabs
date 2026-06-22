@@ -57,7 +57,11 @@ export class StoresService {
         const store = await this.getMyStore(userId)
         // entries: ubah dari object {key: value}-> [key ,value] -> filter yg v !== undefinied yg diambil
         // fromEntries itu ubah dari [key, value] -> {key , value} lagi
-        if (Object.keys(dto).length === 0){
+        const data = Object.fromEntries(
+            Object.entries(dto).filter(([_, v]) => v !== undefined)
+        )
+
+        if (Object.keys(data).length === 0){
             throw new BadRequestException('No fields to update')
         }
 
