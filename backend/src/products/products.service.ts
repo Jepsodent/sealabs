@@ -1,60 +1,152 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateProductDto } from './dto/create-products.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
 export class ProductsService {
-    public DUMMY_PRODUCTS = [
-  {
-    id: "prod-1",
-    name: "Mechanical Keyboard RGB",
-    description: "Keyboard mekanikal dengan switch biru dan lampu RGB.",
-    price: 450000,
-    stock: 15,
-    storeName: "Tech Gadget Store"
-  },
-  {
-    id: "prod-2",
-    name: "Wireless Gaming Mouse",
-    description: "Mouse gaming nirkabel dengan akurasi sensor 16000 DPI.",
-    price: 320000,
-    stock: 25,
-    storeName: "Tech Gadget Store"
-  },
-  {
-    id: "prod-3",
-    name: "Ergonomic Office Chair",
-    description: "Kursi kantor ergonomis dengan sandaran punggung jaring yang nyaman.",
-    price: 1200000,
-    stock: 5,
-    storeName: "Comfort Furniture"
-  },
-  {
-    id: "prod-4",
-    name: "Stainless Steel Tumbler 500ml",
-    description: "Tumbler tahan panas dan dingin hingga 12 jam.",
-    price: 150000,
-    stock: 50,
-    storeName: "Eco Bottle Co"
-  },
-  {
-    id: "prod-5",
-    name: "Bluetooth Noise Cancelling Headphone",
-    description: "Headphone over-ear dengan fitur aktif peredam bising.",
-    price: 850000,
-    stock: 10,
-    storeName: "Audio Station"
-  }
-];
+//   public DUMMY_PRODUCTS = [
+//   {
+//     id: "prod-1",
+//     name: "Mechanical Keyboard RGB",
+//     description: "Keyboard mekanikal dengan switch biru dan lampu RGB.",
+//     price: 450000,
+//     stock: 15,
+//     storeName: "Tech Gadget Store"
+//   },
+// ];
     constructor(private prisma: PrismaService){}
 
-    getProduct(){
-        return this.DUMMY_PRODUCTS
+    async getProduct(){
+        return this.prisma.product.findMany({
+          include: {store: {
+            select: {name: true},
+          }}
+        })
     }
-    getProductById(id:string){
-        const product = this.DUMMY_PRODUCTS.find((prod) => prod.id == id )
+    async getProductById(id:string){
+        const product = await this.prisma.product.findUnique({
+          where: {
+            id
+          },
+          include: {
+            store: {select: {name: true}}
+          }
+        })
         if(!product){
             throw new NotFoundException('Product not found!')
         }
         return product
     }
+
+    async createProduct(userId:string, dto:CreateProductDto){
+      const store = await this.prisma.store.findUnique({
+        where: {ownerId: userId}
+      })
+      if(!store){
+        throw new BadRequestException("Anda harus punya toko terlebih dahulu!")
+      }
+      const product = await this.prisma.product.findUnique({
+        where:{ 
+          storeId_name: {
+            storeId: store.id,
+            name: dto.name
+          }
+        }
+      })
+      if(product){
+        throw new ConflictException("Produk denan nama tersebut sudah ada di toko Anda!")
+      }
+      return this.prisma.product.create({
+        data:{ 
+          description: dto.description,
+          imageUrl: dto.imageUrl,
+          name: dto.name,
+          price: dto.price,
+          stock: dto.stock,
+          storeId: store.id
+        }
+      })
+    }
+
+    async getMyProduct(userId: string){
+      const store = await this.prisma.store.findUnique({
+        where: {ownerId: userId}
+      })
+      if(!store){
+        throw new BadRequestException("Anda harus punya toko terlebih dahulu!")
+      }
+
+      return this.prisma.product.findMany({
+        where: {storeId: store.id}
+      })
+    }
+
+    async updateProduct(userId:string, productId:string, dto:UpdateProductDto){
+      const store = await this.prisma.store.findUnique({
+        where: {ownerId: userId}
+      })
+      if(!store){
+        throw new BadRequestException("Anda harus punya toko terlebih dahulu!")
+      }
+      const product = await this.prisma.product.findUnique({
+        where: {
+          id: productId,
+        }
+      })
+      if(!product){
+        throw new NotFoundException("Product tidak ditemukkan")
+      }
+      if(store.id !== product.storeId){
+        throw new ForbiddenException("Anda tidak memiliki akses ke product")
+      }
+
+      if(dto.name){
+        const existedProduct = await this.prisma.product.findFirst({
+          where:{
+            storeId: store.id,
+            name:dto.name,
+            id: {not: productId}
+          }
+        })
+        if(existedProduct){
+          throw new ConflictException("Produk dengan nama tersebut sudah ada di toko anda!")
+        }
+      }
+
+
+      if (Object.keys(dto).length === 0){
+        throw new BadRequestException('No fields to update')
+      }
+
+      return this.prisma.product.update({
+        where:{ 
+          id:productId
+        },
+        data: dto
+      })
+    }
+
+    async deleteProduct(userId: string, productId: string){
+      const store = await this.prisma.store.findUnique({
+        where: {ownerId: userId}
+      })
+      if(!store){
+        throw new BadRequestException("Anda harus punya toko terlebih dahulu!")
+      }
+      const product = await this.prisma.product.findUnique({
+        where: {
+          id: productId,
+        }
+      })
+      if(!product){
+        throw new NotFoundException("Product tidak ditemukkan")
+      }
+      if(store.id !== product.storeId){
+        throw new ForbiddenException("Anda tidak memiliki akses ke product")
+      }
+      return this.prisma.product.delete({where: {id: productId}})
+    }
+
+
 }

@@ -15,7 +15,10 @@ interface Product {
   description: string;
   price: number;
   stock: number;
-  storeName: string;
+  imageUrl: string;
+  store?: {
+    name: string;
+  };
 }
 
 export default function ProductsPage() {
@@ -72,16 +75,28 @@ export default function ProductsPage() {
           {products.map((product) => (
             <Card
               key={product.id}
-              className="border-zinc-800 bg-zinc-900/20 hover:bg-zinc-900/40 hover:border-zinc-700 transition-all flex flex-col group h-full justify-between"
+              className="border-zinc-800 bg-zinc-900/20 hover:bg-zinc-900/40 hover:border-zinc-700 transition-all flex flex-col group h-full justify-between overflow-hidden"
             >
+              {/* Product Image */}
+              <div className="aspect-video w-full overflow-hidden bg-zinc-950 border-b border-zinc-800/50 relative">
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=60';
+                  }}
+                />
+              </div>
+
               <CardHeader className="p-5">
                 <div className="flex justify-between items-start gap-2">
-                  <span className="text-[10px] uppercase font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-                    {product.storeName}
+                  <span className="text-[10px] uppercase font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 truncate max-w-[150px]">
+                    {product.store?.name || 'Toko SEAPEDIA'}
                   </span>
-                  <span className="text-xs text-zinc-500 font-medium">Stok: {product.stock}</span>
+                  <span className="text-xs text-zinc-500 font-medium whitespace-nowrap">Stok: {product.stock}</span>
                 </div>
-                <CardTitle className="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors mt-3">
+                <CardTitle className="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors mt-3 line-clamp-1">
                   {product.name}
                 </CardTitle>
                 <p className="text-2xl font-black text-white mt-2 tracking-tight">
