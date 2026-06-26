@@ -33,7 +33,6 @@ import { toast } from 'sonner';
 import { StoreSetup } from './seller/store-setup';
 import { ProductModal } from './seller/product-modal';
 import { DeleteProductDialog } from './seller/delete-dialog';
-import Image from 'next/image';
 
 interface Product {
   id: string;
@@ -203,7 +202,7 @@ export function SellerDashboard({ formatRupiah }: SellerDashboardProps) {
               </Button>
             </div>
 
-            <p className="text-sm text-zinc-400 leading-relaxed break-words">
+            <p className="text-sm text-zinc-400 leading-relaxed warp-break-words">
               {myStore.description || 'Tidak ada deskripsi toko.'}
             </p>
           </div>

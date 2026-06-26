@@ -1,12 +1,11 @@
 'use client';
 
-import React from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { ShoppingBag, ArrowUpRight, Search, Loader2 } from 'lucide-react';
+import {  buttonVariants } from '@/components/ui/button';
+import { ShoppingBag, ArrowUpRight, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Product {

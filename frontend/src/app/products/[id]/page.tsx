@@ -1,11 +1,11 @@
 'use client';
 
-import React, { use } from 'react';
+import { use } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ShoppingCart, Store, ShieldAlert, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -122,7 +122,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
               <div className="space-y-2 border-t border-zinc-800/60 pt-4">
                 <h3 className="text-xs uppercase font-bold text-zinc-400 tracking-widest">Deskripsi Produk</h3>
-                <p className="text-sm text-zinc-300 leading-relaxed break-words whitespace-pre-wrap">
+                <p className="text-sm text-zinc-300 leading-relaxed warp-break-words whitespace-pre-wrap">
                   {product.description || 'Tidak ada deskripsi produk.'}
                 </p>
               </div>

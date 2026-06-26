@@ -8,17 +8,58 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  username     String   @unique
-  passwordHash String
-  roles        Role[]
-  activeRole   Role?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  tokenVersion Int      @default(0)
-  store        Store?
+  id                 String              @id @default(uuid())
+  username           String              @unique
+  passwordHash       String
+  roles              Role[]
+  activeRole         Role?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  tokenVersion       Int                 @default(0)
+  store              Store?
+  wallet             Wallet?
+  address            Address[]
+  walletTransactions WalletTransaction[]
+  cartItems          CartItem[]
+  orders             Order[]
 
   @@map("users")
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  balance   Int      @default(0)
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("wallet")
+}
+
+enum TransactionType {
+  TOP_UP
+  PAYMENT
+  REFUND
+}
+
+model WalletTransaction {
+  id        String          @id @default(uuid())
+  amount    Int             @default(0)
+  type      TransactionType
+  userId    String
+  user      User            @relation(references: [id], fields: [userId], onDelete: Cascade)
+  createdAt DateTime        @default(now())
+}
+
+model Address {
+  id          String   @id @default(uuid())
+  label       String // buat kasih nama ke alamat misal rumah dll
+  fullAddress String
+  isDefault   Boolean  @default(false)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
 }
 
 model AppReview {
@@ -47,6 +88,7 @@ model Store {
   products    Product[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  orders      Order[]
 
   @@map("stores")
 }
@@ -60,10 +102,68 @@ model Product {
   imageUrl    String
 
   storeId   String
-  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  store     Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  cartItems CartItem[]
+  orderItem OrderItem[]
 
   @@unique([storeId, name])
   @@map("products")
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(references: [id], fields: [productId], onDelete: Cascade)
+  userId    String
+  user      User     @relation(references: [id], fields: [userId], onDelete: Cascade)
+  quantity  Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+}
+
+enum DeliveryMethod {
+  INSTANT
+  NEXT_DAY
+  REGULAR
+}
+
+model Order {
+  id              String         @id @default(uuid())
+  buyerId         String
+  buyer           User           @relation(references: [id], fields: [buyerId])
+  storeId         String
+  store           Store          @relation(references: [id], fields: [storeId])
+  deliveryAddress String // ni snapshot, bukan id relation
+  deliveryMethod  DeliveryMethod
+  deliveryFee     Int
+  subTotal        Int
+  tax             Int //ppn 12%
+  total           Int
+  status          String         @default("Sedang Dikemas")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  orderItem          OrderItem[]
+  orderStatusHistory OrderStatusHistory[]
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(references: [id], fields: [orderId], onDelete: Cascade)
+  productId String
+  product   Product @relation(references: [id], fields: [productId])
+  price     Int //snapshot harga waktu di catat bukan harga tergantung id
+  quantity  Int
+}
+
+model OrderStatusHistory {
+  id        String   @id @default(uuid())
+  orderId   String
+  status    String
+  timestamp DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id])
 }
