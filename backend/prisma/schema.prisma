@@ -130,6 +130,14 @@ enum DeliveryMethod {
   REGULAR
 }
 
+enum DeliveryStatus {
+  SEDANG_DIKEMAS
+  MENUNGGU_PENGIRIM
+  SEDANG_DIKIRIM
+  PESANAN_SELESAI
+  DIKEMBALIKAN
+}
+
 model Order {
   id              String         @id @default(uuid())
   buyerId         String
@@ -142,7 +150,7 @@ model Order {
   subTotal        Int
   tax             Int //ppn 12%
   total           Int
-  status          String         @default("Sedang Dikemas")
+  status          DeliveryStatus @default(SEDANG_DIKEMAS)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
@@ -161,9 +169,9 @@ model OrderItem {
 }
 
 model OrderStatusHistory {
-  id        String   @id @default(uuid())
+  id        String         @id @default(uuid())
   orderId   String
-  status    String
-  timestamp DateTime @default(now())
-  order     Order    @relation(fields: [orderId], references: [id])
+  status    DeliveryStatus
+  timestamp DateTime       @default(now())
+  order     Order          @relation(fields: [orderId], references: [id])
 }
