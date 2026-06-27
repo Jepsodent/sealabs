@@ -19,14 +19,29 @@ export class AuthService {
         if(existedUser){
             throw new ConflictException("User sudah terdaftar, mohon login!")
         }
-
+        
         const hashedPassword = await bcrypt.hash(dto.password, 10) 
 
+        // const result = await this.prisma.user.create({
+        //     data: {
+        //         username: dto.username,
+        //         passwordHash: hashedPassword, 
+        //         roles: dto.roles,
+        //     }
+        // })
         const result = await this.prisma.user.create({
             data: {
+                passwordHash: hashedPassword,
                 username: dto.username,
-                passwordHash: hashedPassword, 
                 roles: dto.roles,
+                wallet: {
+                    create: {}
+                }
+            },
+            include: {
+                wallet: {
+                    select:{ balance: true}
+                }
             }
         })
 
