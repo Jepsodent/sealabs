@@ -22,6 +22,9 @@ export class WalletController {
     async getTransactionHistory(@CurrentUser() user:SafeUser){
         return this.walletService.getTransactionHistory(user.id)
     }
-    
+    @Get()
+    async getWalletBalance(@CurrentUser() user:SafeUser){
+        return this.walletService.getWalletBalance(user.id)
+    }
 
 }

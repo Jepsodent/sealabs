@@ -73,4 +73,20 @@ export class WalletService {
         })
     }
 
+    async getWalletBalance(userId:string){
+        let wallet = await this.prisma.wallet.findUnique({
+            where: {
+                userId
+            }
+        })
+        if(!wallet){
+            wallet = await this.prisma.wallet.create({
+                data: {
+                    userId,
+                    balance: 0
+                }
+            })
+        }
+        return wallet
+    }
 }
