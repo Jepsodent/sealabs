@@ -11,9 +11,10 @@ import { WalletModule } from './wallet/wallet.module';
 import { AddressesModule } from './addresses/addresses.module';
 import { CartModule } from './cart/cart.module';
 import { OrdersModule } from './orders/orders.module';
+import { DiscountsModule } from './discounts/discounts.module';
 
 @Module({
-  imports: [PrismaModule, ConfigModule, AuthModule, ReviewsModule, ProductsModule, StoresModule, WalletModule, AddressesModule, CartModule, OrdersModule],
+  imports: [PrismaModule, ConfigModule, AuthModule, ReviewsModule, ProductsModule, StoresModule, WalletModule, AddressesModule, CartModule, OrdersModule, DiscountsModule],
   controllers: [AppController],
   providers: [AppService],
 })

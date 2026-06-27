@@ -139,6 +139,11 @@ enum DeliveryStatus {
   DIKEMBALIKAN
 }
 
+enum DiscountType {
+  VOUCHER
+  PROMO
+}
+
 model Order {
   id              String         @id @default(uuid())
   buyerId         String
@@ -156,9 +161,9 @@ model Order {
   updatedAt       DateTime       @updatedAt
 
   //level 4 
-  discount     Int     @default(0)
+  discount     Int           @default(0)
   discountCode String?
-  discountType String?
+  discountType DiscountType?
 
   orderItem          OrderItem[]
   orderStatusHistory OrderStatusHistory[]
@@ -197,7 +202,7 @@ model Voucher {
   remainingUsage Int
   createdAt      DateTime @default(now())
 
-  @@map("vourcers")
+  @@map("vourchers")
 }
 
 model Promo {
