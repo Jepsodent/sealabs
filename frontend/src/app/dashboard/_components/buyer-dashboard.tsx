@@ -1,80 +1,178 @@
 'use client';
 
-import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Wallet, Package, TrendingUp, Clock } from 'lucide-react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Plus, MapPin } from 'lucide-react';
+
+// Buyer dashboard Sub-components
+import { WalletCard } from './buyer/wallet-card';
+import { WalletTransactions } from './buyer/wallet-transactions';
+import { AddressList } from './buyer/address-list';
+import { AddressDialogs } from './buyer/address-dialogs';
 
 interface BuyerDashboardProps {
   formatRupiah: (amount: number) => string;
 }
 
+interface WalletType {
+  id: string;
+  balance: number;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface WalletTransaction {
+  id: string;
+  amount: number;
+  type: 'TOP_UP' | 'PAYMENT' | 'REFUND';
+  userId: string;
+  createdAt: string;
+}
+
+interface Address {
+  id: string;
+  label: string;
+  fullAddress: string;
+  isDefault: boolean;
+  userId: string;
+  createdAt: string;
+}
+
 export function BuyerDashboard({ formatRupiah }: BuyerDashboardProps) {
+  const [activeTab, setActiveTab] = useState<'wallet' | 'addresses'>('wallet');
+
+  // Modal control states
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+
+  // --- QUERY FETCHERS ---
+  // 1. Fetch Wallet Balance
+  const { data: wallet, isLoading: isLoadingWallet, refetch: refetchWallet } = useQuery<WalletType>({
+    queryKey: ['wallet'],
+    queryFn: async () => {
+      const response = await api.get('/wallet');
+      return response.data;
+    },
+  });
+
+  // 2. Fetch Wallet Transactions
+  const { data: transactions = [], isLoading: isLoadingTransactions, refetch: refetchTransactions } = useQuery<WalletTransaction[]>({
+    queryKey: ['wallet-transactions'],
+    queryFn: async () => {
+      const response = await api.get('/wallet/transactions');
+      return response.data;
+    },
+  });
+
+  // 3. Fetch Addresses
+  const { data: addresses = [], isLoading: isLoadingAddresses, refetch: refetchAddresses } = useQuery<Address[]>({
+    queryKey: ['addresses'],
+    queryFn: async () => {
+      const response = await api.get('/addresses');
+      return response.data;
+    },
+  });
+
+  const openAddAddress = () => {
+    setSelectedAddress(null);
+    setIsAddressModalOpen(true);
+  };
+
+  const openEditAddress = (addr: Address) => {
+    setSelectedAddress(addr);
+    setIsAddressModalOpen(true);
+  };
+
+  const openDeleteConfirm = (addr: Address) => {
+    setSelectedAddress(addr);
+    setIsDeleteConfirmOpen(true);
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Buyer Wallet & Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-zinc-800 bg-zinc-900/30 p-6 flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs text-zinc-500 font-semibold uppercase">Dompet Saya</span>
-            <h3 className="text-3xl font-black text-white">{formatRupiah(500000)}</h3>
-          </div>
-          <div className="h-12 w-12 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center">
-            <Wallet className="h-6 w-6" />
-          </div>
-        </Card>
-
-        <Card className="border-zinc-800 bg-zinc-900/30 p-6 flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs text-zinc-500 font-semibold uppercase">Total Pembelian</span>
-            <h3 className="text-3xl font-black text-white">12 Transaksi</h3>
-          </div>
-          <div className="h-12 w-12 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center">
-            <Package className="h-6 w-6" />
-          </div>
-        </Card>
-
-        <Card className="border-zinc-800 bg-zinc-900/30 p-6 flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs text-zinc-500 font-semibold uppercase">Voucher Aktif</span>
-            <h3 className="text-3xl font-black text-white">3 Kupon</h3>
-          </div>
-          <div className="h-12 w-12 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
-            <TrendingUp className="h-6 w-6" />
-          </div>
-        </Card>
+    <div className="space-y-8">
+      {/* Navigation Tabs */}
+      <div className="flex border-b border-zinc-800">
+        <button
+          onClick={() => setActiveTab('wallet')}
+          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+            activeTab === 'wallet'
+              ? 'border-indigo-500 text-white'
+              : 'border-transparent text-zinc-400 hover:text-white'
+          }`}
+        >
+          Dompet & Transaksi
+        </button>
+        <button
+          onClick={() => setActiveTab('addresses')}
+          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+            activeTab === 'addresses'
+              ? 'border-indigo-500 text-white'
+              : 'border-transparent text-zinc-400 hover:text-white'
+          }`}
+        >
+          Alamat Pengiriman
+        </button>
       </div>
 
-      {/* Buyer Active Deliveries */}
-      <Card className="border-zinc-800 bg-zinc-900/30">
-        <CardHeader className="border-b border-zinc-800/40 p-5">
-          <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-            <Clock className="h-5 w-5 text-indigo-400" /> Riwayat Belanja Terbaru (Simulasi)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-5">
-          <div className="space-y-4">
-            {[
-              { id: 'TRX-9821', product: 'Mechanical Keyboard RGB', store: 'Tech Gadget Store', price: 450000, status: 'Dalam Pengiriman' },
-              { id: 'TRX-9762', product: 'Stainless Steel Tumbler 500ml', store: 'Eco Bottle Co', price: 150000, status: 'Selesai' }
-            ].map((trx) => (
-              <div key={trx.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 p-3 bg-zinc-900/50 rounded-lg border border-zinc-800/60">
-                <div>
-                  <span className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider">{trx.id}</span>
-                  <h4 className="text-sm font-semibold text-white mt-0.5">{trx.product}</h4>
-                  <span className="text-xs text-zinc-400">{trx.store} • {formatRupiah(trx.price)}</span>
-                </div>
-                <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
-                  trx.status === 'Selesai' 
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                    : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
-                }`}>
-                  {trx.status}
-                </span>
-              </div>
-            ))}
+      {/* --- TAB CONTENT: WALLET --- */}
+      {activeTab === 'wallet' && (
+        <div className="space-y-6">
+          <WalletCard
+            wallet={wallet}
+            isLoadingWallet={isLoadingWallet}
+            formatRupiah={formatRupiah}
+            refetchWallet={refetchWallet}
+            refetchTransactions={refetchTransactions}
+          />
+
+          <WalletTransactions
+            transactions={transactions}
+            isLoadingTransactions={isLoadingTransactions}
+            formatRupiah={formatRupiah}
+          />
+        </div>
+      )}
+
+      {/* --- TAB CONTENT: ADDRESSES --- */}
+      {activeTab === 'addresses' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center border-b border-zinc-800/60 pb-4">
+            <div>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-indigo-400" /> Manajemen Alamat Pengiriman
+              </h3>
+              <p className="text-xs text-zinc-500 mt-1">Kelola alamat pengiriman barang untuk proses checkout Anda.</p>
+            </div>
+            <Button
+              onClick={openAddAddress}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="h-4.5 w-4.5" /> Tambah Alamat Baru
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+
+          <AddressList
+            addresses={addresses}
+            isLoadingAddresses={isLoadingAddresses}
+            openEditAddress={openEditAddress}
+            openDeleteConfirm={openDeleteConfirm}
+          />
+        </div>
+      )}
+
+      {/* Shared Address Modals */}
+      <AddressDialogs
+        isModalOpen={isAddressModalOpen}
+        setIsModalOpen={setIsAddressModalOpen}
+        selectedAddress={selectedAddress}
+        onSuccess={refetchAddresses}
+        isDeleteOpen={isDeleteConfirmOpen}
+        setIsDeleteOpen={setIsDeleteConfirmOpen}
+      />
     </div>
   );
 }
