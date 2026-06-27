@@ -15,13 +15,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
-import { Menu, X, User as UserIcon, Shield, ChevronDown, LogOut } from 'lucide-react';
+import { Menu, X, User as UserIcon, Shield, ChevronDown, LogOut, ShoppingCart, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 
 export function Navbar() {
   const { user, logout, updateActiveRole } = useAuth();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const { data: cartData } = useQuery({
+    queryKey: ['cart'],
+    queryFn: async () => {
+      const response = await api.get('/cart');
+      return response.data;
+    },
+    enabled: !!user && user.activeRole === 'BUYER',
+  });
 
   const handleRoleChange = async (role: Role) => {
     try {
@@ -135,6 +146,23 @@ export function Navbar() {
                 </DropdownMenu>
               )}
 
+              {user.activeRole === 'BUYER' && (
+                <Link
+                  href="/cart"
+                  className={cn(
+                    buttonVariants({ variant: 'ghost', size: 'icon' }),
+                    "relative h-9 w-9 rounded-full bg-zinc-900 border border-zinc-800 p-0 text-zinc-300 hover:bg-zinc-800 hover:text-white flex items-center justify-center cursor-pointer"
+                  )}
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  {cartData?.totalQuantity > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-650 text-[9px] font-bold text-white shadow-md">
+                      {cartData.totalQuantity}
+                    </span>
+                  )}
+                </Link>
+              )}
+
               {/* User Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -157,6 +185,17 @@ export function Navbar() {
                       <span>Dasbor Saya</span>
                     </Link>
                   </DropdownMenuItem>
+                  {user.activeRole === 'BUYER' && (
+                    <>
+                      <DropdownMenuSeparator className="bg-zinc-800" />
+                      <DropdownMenuItem className="focus:bg-zinc-800 focus:text-white cursor-pointer p-0">
+                        <Link href="/orders" className="flex w-full items-center gap-2 px-3 py-1.5 text-sm text-zinc-300 hover:text-white">
+                          <ClipboardList className="h-4 w-4 text-zinc-400" />
+                          <span>Pesanan Saya</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator className="bg-zinc-800" />
                   <DropdownMenuItem
                     onClick={logout}
