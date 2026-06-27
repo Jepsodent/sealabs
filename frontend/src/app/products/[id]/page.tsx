@@ -1,40 +1,32 @@
 'use client';
 
-import { use } from 'react';
+import { use, useState } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { ArrowLeft, ShoppingCart, Store, ShieldAlert, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface Product {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  stock: number;
-  imageUrl: string;
-  storeId: string;
-  store?: {
-    name: string;
-  };
-}
-
-interface StoreInfo {
-  id: string;
-  name: string;
-  description: string | null;
-  owner?: {
-    username: string;
-  };
-}
+import { Product, StoreInfo } from '@/types';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const [quantity, setQuantity] = useState(1);
+  const [isConflictOpen, setIsConflictOpen] = useState(false);
 
   // 1. Fetch Product Detail
   const { data: product, isLoading, error } = useQuery<Product>({
@@ -55,6 +47,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     enabled: !!product?.storeId,
   });
 
+  // 3. Fetch Cart summary for conflict clearing
+  const isBuyer = user?.activeRole === 'BUYER';
+  const { data: cartData } = useQuery({
+    queryKey: ['cart'],
+    queryFn: async () => {
+      const response = await api.get('/cart');
+      return response.data;
+    },
+    enabled: isBuyer,
+  });
+
   const formatRupiah = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -64,12 +67,46 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }).format(price);
   };
 
-  const handleCheckout = () => {
-    toast.success('Simulasi Pembelian Berhasil!');
-  };
+  // Mutations
+  const addCartMutation = useMutation({
+    mutationFn: async ({ productId, qty }: { productId: string; qty: number }) => {
+      const response = await api.post('/cart', { productId, quantity: qty });
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success('Produk berhasil ditambahkan ke keranjang!');
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+    },
+    onError: (error: any) => {
+      if (error.response?.status === 400 && error.response?.data?.message?.includes('toko lain')) {
+        setIsConflictOpen(true);
+      } else {
+        toast.error(error.response?.data?.message || 'Gagal menambahkan ke keranjang');
+      }
+    },
+  });
 
-  // Logic: checkout is only allowed if user is logged in AND their activeRole is BUYER
-  const isBuyer = user?.activeRole === 'BUYER';
+  const resetCartAndAddMutation = useMutation({
+    mutationFn: async () => {
+      // 1. Delete all current items in cart
+      if (cartData && cartData.items) {
+        await Promise.all(
+          cartData.items.map((item: any) => api.delete(`/cart/${item.productId}`))
+        );
+      }
+      // 2. Add new item
+      const response = await api.post('/cart', { productId: id, quantity });
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success('Keranjang direset dan produk berhasil ditambahkan!');
+      setIsConflictOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Gagal meriset keranjang.');
+    },
+  });
 
   return (
     <div className="flex-1 w-full bg-zinc-950 px-4 py-12 sm:px-6 lg:px-8 max-w-4xl mx-auto space-y-6">
@@ -174,19 +211,59 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               {/* Purchase restriction display */}
               <div className="space-y-4">
                 {isBuyer ? (
-                  <Button
-                    onClick={handleCheckout}
-                    className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium h-12 shadow-lg shadow-indigo-500/10 flex items-center justify-center gap-2"
-                  >
-                    <ShoppingCart className="h-5 w-5" /> Beli Sekarang
-                  </Button>
+                  <div className="space-y-4">
+                    {/* Quantity Selector */}
+                    <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+                      <span className="text-sm text-zinc-400">Kuantitas</span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-8 w-8 border-zinc-800 bg-zinc-950 text-white"
+                          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                          disabled={quantity <= 1 || product.stock <= 0}
+                        >
+                          -
+                        </Button>
+                        <span className="w-10 text-center text-sm font-bold text-white">
+                          {product.stock > 0 ? quantity : 0}
+                        </span>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-8 w-8 border-zinc-800 bg-zinc-950 text-white"
+                          onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
+                          disabled={quantity >= product.stock || product.stock <= 0}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={() => addCartMutation.mutate({ productId: product.id, qty: quantity })}
+                      disabled={addCartMutation.isPending || product.stock <= 0}
+                      className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium h-12 shadow-lg shadow-indigo-500/10 flex items-center justify-center gap-2"
+                    >
+                      {addCartMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Menambahkan...
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart className="h-5 w-5" /> Tambah ke Keranjang
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     <Button
                       disabled
                       className="w-full bg-zinc-800 text-zinc-500 border border-zinc-700 cursor-not-allowed h-12 flex items-center justify-center gap-2"
                     >
-                      <ShoppingCart className="h-5 w-5" /> Beli Sekarang
+                      <ShoppingCart className="h-5 w-5" /> Tambah ke Keranjang
                     </Button>
                     <div className="flex gap-2 p-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-400 text-xs leading-relaxed">
                       <ShieldAlert className="h-5 w-5 text-indigo-400 shrink-0" />
@@ -214,6 +291,40 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </Card>
       )}
+
+      {/* Conflict Modal */}
+      <Dialog open={isConflictOpen} onOpenChange={setIsConflictOpen}>
+        <DialogContent className="border-zinc-800 bg-zinc-900 text-white max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-white flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-indigo-400" /> Reset Keranjang Belanja?
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400 text-xs leading-relaxed">
+              Keranjang Anda sudah berisi produk dari toko lain. Sesuai ketentuan, satu keranjang hanya boleh berisi produk dari satu toko yang sama.
+              <br /><br />
+              Apakah Anda ingin mengosongkan keranjang saat ini untuk memasukkan produk ini?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="pt-4 flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsConflictOpen(false)}
+              className="flex-1 border-zinc-800 text-zinc-450 hover:text-white"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              disabled={resetCartAndAddMutation.isPending}
+              onClick={() => resetCartAndAddMutation.mutate()}
+              className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+            >
+              {resetCartAndAddMutation.isPending ? 'Mengosongkan...' : 'Ya, Reset & Tambah'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
