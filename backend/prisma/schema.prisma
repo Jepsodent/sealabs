@@ -22,6 +22,7 @@ model User {
   walletTransactions WalletTransaction[]
   cartItems          CartItem[]
   orders             Order[]
+  deliveryJobs       DeliveryJob[]
 
   @@map("users")
 }
@@ -41,6 +42,7 @@ enum TransactionType {
   TOP_UP
   PAYMENT
   REFUND
+  DRIVER_EARNING
 }
 
 model WalletTransaction {
@@ -167,6 +169,7 @@ model Order {
 
   orderItem          OrderItem[]
   orderStatusHistory OrderStatusHistory[]
+  deliveryJob        DeliveryJob?
 
   @@map("orders")
 }
@@ -214,4 +217,23 @@ model Promo {
   createdAt     DateTime @default(now())
 
   @@map("promos")
+}
+
+enum DeliveryJobStatus {
+  AVAILABLE
+  TAKEN
+  COMPLETED
+}
+
+model DeliveryJob {
+  id        String            @id @default(uuid())
+  orderId   String            @unique
+  order     Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  driverId  String?
+  driver    User?             @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  status    DeliveryJobStatus @default(AVAILABLE)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@map("delivery_jobs")
 }
