@@ -4,7 +4,7 @@ import { CheckoutDto } from './dto/checkout.dto';
 import { CartService } from 'src/cart/cart.service';
 import { DeliveryPrice, ppnTax } from 'src/common/delivery.constant';
 import { WalletService } from 'src/wallet/wallet.service';
-import { DeliveryStatus, TransactionType } from '@prisma/client';
+import { DeliveryStatus, DiscountType, TransactionType } from '@prisma/client';
 
 @Injectable()
 
@@ -28,27 +28,64 @@ export class OrdersService {
                     id: dto.addressId
                 }
             })
-            if(!address) throw new NotFoundException('Alamat tidak ditemukan!')
+            if(!address || address.userId !== userId) throw new NotFoundException('Alamat tidak ditemukan!')
             
             //4. Tulis snapshot address string - label - fullAddress
             const snapshotAddress = `${address.label} - ${address.fullAddress}`
 
-            //5. Hitung totalPrice dan payment pake walletService
-            const taxAmount = Math.floor(cartItem.subTotal * ppnTax)
-            const totalPrice = taxAmount + cartItem.subTotal + DeliveryPrice[dto.deliveryMethod]
+            // tambahan untuk cek discount
+            let discountPrice: number = 0
+            let discountType: DiscountType | null = null
+            
+            if(dto.discountCode){
+                const [promo, voucher] = await Promise.all([
+                    tx.promo.findUnique({where: {code: dto.discountCode}}),
+                    tx.voucher.findUnique({where: {code: dto.discountCode}})
+                ])
+                const discount = promo || voucher
+                if(!discount) throw new NotFoundException('Kode diskon tidak valid / tidak ditemukan')
+                
+                if(discount.expiryDate < new Date()) throw new BadRequestException('Kode diskon sudah kadaluwarsa')
 
-            const wallet = await tx.wallet.findUnique({where: {userId}, select: {balance: true}})
-            if(!wallet || wallet.balance < totalPrice){
-                throw new BadRequestException("Saldo anda tidak mencukupi transaksi ini!")
-            }
-            await tx.wallet.update({
-                where:{userId},
-                data: {
-                    balance: {
-                        decrement: totalPrice
+                if(voucher){
+                    discountType = DiscountType.VOUCHER
+                    const updatedVoucher = await tx.voucher.updateMany({
+                        where: {
+                            code: dto.discountCode,
+                            remainingUsage: {gte: 1}
+                        },
+                        data: {
+                            remainingUsage: {decrement: 1}
+                        }
+                    })
+                    if (updatedVoucher.count === 0){
+                        throw new BadRequestException('Kuota voucher telah habis!')
                     }
+
+                }else{
+                    discountType =DiscountType.PROMO
+                }
+                const rawDiscount = discount.isPercent ? Math.floor((cartItem.subTotal * discount.discountValue) / 100) : discount.discountValue
+                discountPrice = Math.min(rawDiscount, cartItem.subTotal)
+            }
+
+            //5. Hitung totalPrice dan payment pake walletService
+            const taxAmount = Math.floor((cartItem.subTotal - discountPrice) * ppnTax)
+            const totalPrice = cartItem.subTotal - discountPrice + taxAmount  + DeliveryPrice[dto.deliveryMethod]
+
+            const updatedWallet = await tx.wallet.updateMany({
+                where:{ 
+                    userId,
+                    balance: {gte: totalPrice}
+                },
+                data: {
+                    balance: {decrement: totalPrice}
                 }
             })
+            if(updatedWallet.count === 0){
+                throw new BadRequestException('Saldo anda tidak mencukupi transaksi ini!')
+            }
+            
             await tx.walletTransaction.create({
                 data: {
                     amount: totalPrice,
@@ -84,6 +121,10 @@ export class OrdersService {
                     subTotal: cartItem.subTotal,
                     tax: taxAmount,
                     total: totalPrice,
+                    discountCode: dto.discountCode,
+                    discount: discountPrice,
+                    discountType,
+
                     orderItem: {
                         create: cartItem.items.map((item) => ({
                             price: item.price,
