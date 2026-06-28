@@ -80,7 +80,8 @@ export class DiscountsService {
                 type: DiscountType.PROMO
             }
         }
-        if ((voucher.expiryDate < new Date()) || voucher.remainingUsage <= 0) throw new BadRequestException('Kode diskon sudah kadaluwarsa')
+        if (voucher.expiryDate < new Date()) throw new BadRequestException('Kode diskon sudah kadaluwarsa')
+        if (voucher.remainingUsage <= 0) throw new BadRequestException('Kuota voucher telah habis!')
         return {
             ...voucher,
             type: DiscountType.VOUCHER
