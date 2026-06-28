@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CheckoutDto } from './dto/checkout.dto';
 import { CurrentUser } from 'src/auth/decorator/current-user.decorator';
@@ -13,7 +13,7 @@ import { Role } from '@prisma/client';
 export class OrdersController {
     constructor(private readonly orderService: OrdersService){}
 
-    @Post('/checkout')
+    @Post('checkout')
     @CurrentRole(Role.BUYER)
     async checkout(@Body() dto:CheckoutDto, @CurrentUser() user:SafeUser) {
         return this.orderService.checkout(dto, user.id)
@@ -28,6 +28,12 @@ export class OrdersController {
     @CurrentRole(Role.SELLER)
     async getOrderSeller(@CurrentUser() user:SafeUser){
         return this.orderService.getOrders(user.id, 'SELLER')
+    }
+
+    @Put(':id/process')
+    @CurrentRole(Role.SELLER)
+    async updateStatusOrder(@CurrentUser() user:SafeUser, @Param('id') orderId: string){
+        return this.orderService.updateStatusOrder(user.id, orderId)
     }
 
 

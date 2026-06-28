@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CheckoutDto } from './dto/checkout.dto';
 import { CartService } from 'src/cart/cart.service';
@@ -85,7 +85,7 @@ export class OrdersService {
             if(updatedWallet.count === 0){
                 throw new BadRequestException('Saldo anda tidak mencukupi transaksi ini!')
             }
-            
+
             await tx.walletTransaction.create({
                 data: {
                     amount: totalPrice,
@@ -200,5 +200,43 @@ export class OrdersService {
             }
         }
     }
+    //seller
+    async updateStatusOrder(userId: string, orderId:string){
+        const order = await this.prisma.order.findUnique({
+            where:{id: orderId},
+            include: {
+                store: {select: {ownerId: true}}
+            }
+        })
+        if(!order){
+            throw new NotFoundException('Pesanan tidak ditemukkan')
+        }
+        if(order.store.ownerId !== userId){
+            throw new ForbiddenException('Anda tidak berhak memproses pesanan ini!')
+        }
+        if (order.status !== DeliveryStatus.SEDANG_DIKEMAS){
+            throw new BadRequestException('Pesanan tidak dapat diproses lagi!')
+        }
+        return this.prisma.$transaction(async (tx) => {
+            const updated = await tx.order.updateMany({
+                where: {
+                    id: orderId,
+                    status: DeliveryStatus.SEDANG_DIKEMAS
+                },
+                data: {status: DeliveryStatus.MENUNGGU_PENGIRIM}
+            })
+            if(updated.count === 0) {
+                throw new BadRequestException('Pesanan tidak dapat diproses lagi!')
+            }
+            await tx.orderStatusHistory.create({
+                data: {
+                    orderId,
+                    status: DeliveryStatus.MENUNGGU_PENGIRIM
+                }
+            })
+            return tx.order.findUnique({where: {id: orderId}})
+        })
+    }
+
 
 }
