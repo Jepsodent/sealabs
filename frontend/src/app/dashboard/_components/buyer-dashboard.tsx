@@ -59,6 +59,15 @@ export function BuyerDashboard({ formatRupiah }: BuyerDashboardProps) {
     },
   });
 
+  // Fetch Buyer Expense Report
+  const { data: buyerReport, isLoading: isLoadingReport } = useQuery<{ totalExpense: number }>({
+    queryKey: ['buyer-report'],
+    queryFn: async () => {
+      const response = await api.get('/reports/buyer');
+      return response.data;
+    },
+  });
+
   // 2. Fetch Wallet Transactions
   const { data: transactions = [], isLoading: isLoadingTransactions, refetch: refetchTransactions } = useQuery<WalletTransaction[]>({
     queryKey: ['wallet-transactions'],
@@ -127,6 +136,8 @@ export function BuyerDashboard({ formatRupiah }: BuyerDashboardProps) {
             formatRupiah={formatRupiah}
             refetchWallet={refetchWallet}
             refetchTransactions={refetchTransactions}
+            buyerReport={buyerReport}
+            isLoadingReport={isLoadingReport}
           />
 
           <WalletTransactions
