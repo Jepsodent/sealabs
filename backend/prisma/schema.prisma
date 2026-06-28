@@ -54,8 +54,8 @@ model WalletTransaction {
 
 model Address {
   id          String   @id @default(uuid())
-  label       String // buat kasih nama ke alamat misal rumah dll
-  fullAddress String
+  label       String //@unique
+  fullAddress String //@unique
   isDefault   Boolean  @default(false)
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)

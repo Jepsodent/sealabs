@@ -6,24 +6,32 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, FileText, CheckCircle, Package, Truck, Calendar, MapPin, Receipt, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle, Package, Truck, Calendar, MapPin, Receipt, ShieldAlert } from 'lucide-react';
 
 import { Order } from '@/types';
+
+const ALL_STATUSES = [
+  { status: 'SEDANG_DIKEMAS', label: 'Sedang Dikemas' },
+  { status: 'MENUNGGU_PENGIRIM', label: 'Menunggu Pengirim' },
+  { status: 'SEDANG_DIKIRIM', label: 'Sedang Dikirim' },
+  { status: 'PESANAN_SELESAI', label: 'Pesanan Selesai' },
+];
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user } = useAuth();
-  const isBuyer = user?.activeRole === 'BUYER';
+  const activeRole = user?.activeRole;
+  const isBuyerOrSeller = activeRole === 'BUYER' || activeRole === 'SELLER';
 
-  // Fetch all orders for buyer and find the matching one
+  // Fetch all orders for buyer or seller and find the matching one
   const { data: orders = [], isLoading } = useQuery<Order[]>({
-    queryKey: ['orders-buyer'],
+    queryKey: ['orders', activeRole],
     queryFn: async () => {
-      const response = await api.get('/orders/buyer');
+      const endpoint = activeRole === 'SELLER' ? '/orders/seller' : '/orders/buyer';
+      const response = await api.get(endpoint);
       return response.data;
     },
-    enabled: isBuyer,
+    enabled: isBuyerOrSeller,
   });
 
   const order = orders.find((o) => o.id === id);
@@ -35,10 +43,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price);
-  };
-
-  const getStatusLabel = (status: string) => {
-    return status.replace(/_/g, ' ');
   };
 
   if (isLoading) {
@@ -67,15 +71,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     );
   }
 
-  // Sort history by timestamp ascending
-  const sortedHistory = [...order.orderStatusHistory].sort(
-    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-  );
+
 
   return (
     <div className="flex-1 w-full bg-zinc-950 px-4 py-12 sm:px-6 lg:px-8 max-w-4xl mx-auto space-y-6">
       {/* Back Link */}
-      <Link href="/orders" className="inline-flex items-center gap-2 text-zinc-400 hover:text-white text-sm font-medium transition-colors">
+      <Link href={activeRole === 'SELLER' ? '/dashboard' : '/orders'} className="inline-flex items-center gap-2 text-zinc-400 hover:text-white text-sm font-medium transition-colors">
         <ArrowLeft className="h-4 w-4" /> Kembali ke Transaksi
       </Link>
 
@@ -159,32 +160,66 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             <h3 className="text-sm font-bold text-white border-b border-zinc-800/60 pb-3 mb-4">Lini Masa Pelacakan</h3>
             
             <div className="relative pl-6 space-y-6 border-l border-zinc-800">
-              {sortedHistory.map((hist, index) => {
-                const isLast = index === sortedHistory.length - 1;
+              {ALL_STATUSES.map((step) => {
+                const hist = order.orderStatusHistory.find((h) => h.status === step.status);
+                const isActive = !!hist;
+                const isCurrent = order.status === step.status;
+                
                 return (
-                  <div key={hist.id} className="relative">
+                  <div key={step.status} className="relative">
                     {/* Circle marker */}
-                    <span className={`absolute -left-[30px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full border ${
-                      isLast 
-                        ? 'bg-indigo-600 border-indigo-500 text-white' 
-                        : 'bg-zinc-950 border-zinc-850 text-zinc-650'
+                    <span className={`absolute -left-[30px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full border transition-colors duration-200 ${
+                      isCurrent
+                        ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                        : isActive
+                          ? 'bg-zinc-900 border-emerald-650 text-emerald-400'
+                          : 'bg-zinc-950 border-zinc-850 text-zinc-700'
                     }`}>
-                      <CheckCircle className={`h-2.5 w-2.5 ${isLast ? 'opacity-100' : 'opacity-40'}`} />
+                      <CheckCircle className={`h-2.5 w-2.5 ${isActive ? 'opacity-100' : 'opacity-20'}`} />
                     </span>
                     
                     <div className="space-y-1">
-                      <h4 className={`text-xs font-bold capitalize ${isLast ? 'text-indigo-400' : 'text-zinc-400'}`}>
-                        {getStatusLabel(hist.status).toLowerCase()}
+                      <h4 className={`text-xs font-bold ${
+                        isCurrent
+                          ? 'text-emerald-400 font-extrabold'
+                          : isActive
+                            ? 'text-zinc-300'
+                            : 'text-zinc-500'
+                      }`}>
+                        {step.label}
                       </h4>
-                      <p className="text-[9px] text-zinc-550 font-semibold">
-                        {new Date(hist.timestamp).toLocaleDateString('id-ID', {
-                          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-                        })}
-                      </p>
+                      {hist ? (
+                        <p className="text-[9px] text-zinc-500 font-medium">
+                          {new Date(hist.timestamp).toLocaleDateString('id-ID', {
+                            day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                          })}
+                        </p>
+                      ) : (
+                        <p className="text-[9px] text-zinc-650 italic">Belum tercapai</p>
+                      )}
                     </div>
                   </div>
                 );
               })}
+
+              {/* Special check for DIKEMBALIKAN status */}
+              {order.status === 'DIKEMBALIKAN' && (
+                <div className="relative">
+                  <span className="absolute -left-[30px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full border bg-rose-600 border-rose-500 text-white shadow-lg shadow-rose-500/20">
+                    <CheckCircle className="h-2.5 w-2.5 text-white" />
+                  </span>
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-bold text-rose-400 font-extrabold">Pesanan Dikembalikan</h4>
+                    {order.orderStatusHistory.find((h) => h.status === 'DIKEMBALIKAN') && (
+                      <p className="text-[9px] text-zinc-500 font-medium">
+                        {new Date(order.orderStatusHistory.find((h) => h.status === 'DIKEMBALIKAN')!.timestamp).toLocaleDateString('id-ID', {
+                          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                        })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
 
@@ -199,6 +234,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 <span>Subtotal Barang</span>
                 <span className="font-semibold text-white">{formatRupiah(order.subTotal)}</span>
               </div>
+              {order.discount && order.discount > 0 ? (
+                <div className="flex justify-between text-emerald-400">
+                  <span>Diskon {order.discountCode ? `(${order.discountCode})` : ''}</span>
+                  <span className="font-semibold">-{formatRupiah(order.discount)}</span>
+                </div>
+              ) : null}
               <div className="flex justify-between">
                 <span>Ongkos Kirim</span>
                 <span className="font-semibold text-white">{formatRupiah(order.deliveryFee)}</span>
