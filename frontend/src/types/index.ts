@@ -106,4 +106,7 @@ export interface Order {
   };
   orderItem: OrderItem[];
   orderStatusHistory: OrderStatusHistory[];
+  discount?: number;
+  discountCode?: string | null;
+  discountType?: 'VOUCHER' | 'PROMO' | null;
 }

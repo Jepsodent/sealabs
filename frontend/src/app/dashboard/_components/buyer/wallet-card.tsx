@@ -36,6 +36,8 @@ interface WalletCardProps {
   formatRupiah: (amount: number) => string;
   refetchWallet: () => void;
   refetchTransactions: () => void;
+  buyerReport?: { totalExpense: number };
+  isLoadingReport?: boolean;
 }
 
 const topUpSchema = z.object({
@@ -52,6 +54,8 @@ export function WalletCard({
   formatRupiah,
   refetchWallet,
   refetchTransactions,
+  buyerReport,
+  isLoadingReport,
 }: WalletCardProps) {
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
 
@@ -90,42 +94,60 @@ export function WalletCard({
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* Wallet Balance */}
-      <Card className="border-zinc-800 bg-zinc-900/30 p-6 flex items-center justify-between md:col-span-2">
+      <Card className="border-zinc-800 bg-zinc-900/30 p-6 flex flex-col justify-between">
         <div className="space-y-1">
           <span className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Saldo Dompet Saya</span>
           {isLoadingWallet ? (
             <div className="h-9 w-32 bg-zinc-800 animate-pulse rounded mt-1" />
           ) : (
-            <h3 className="text-3xl font-black text-white">{formatRupiah(wallet?.balance ?? 0)}</h3>
+            <h3 className="text-2xl font-black text-white">{formatRupiah(wallet?.balance ?? 0)}</h3>
           )}
         </div>
-        <div className="flex gap-3">
+        <div className="mt-4">
           <Button
             onClick={() => {
               resetTopUp({ amount: 50000 });
               setIsTopUpOpen(true);
             }}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-1.5 shadow-lg shadow-indigo-600/10 cursor-pointer"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-600/10 cursor-pointer"
           >
             <Plus className="h-4.5 w-4.5" /> Top Up Saldo
           </Button>
         </div>
       </Card>
 
-      {/* Orders Navigation Short Link (Best Practice Accessibility) */}
-      <Card className="border-zinc-800 bg-zinc-900/30 p-6 flex items-center justify-between">
+      {/* Expenditure Report */}
+      <Card className="border-zinc-800 bg-zinc-900/30 p-6 flex flex-col justify-between">
         <div className="space-y-1">
-          <span className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Pesanan Saya</span>
+          <span className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Total Pengeluaran</span>
+          {isLoadingReport ? (
+            <div className="h-9 w-32 bg-zinc-800 animate-pulse rounded mt-1" />
+          ) : (
+            <h3 className="text-2xl font-black text-rose-400">{formatRupiah(buyerReport?.totalExpense ?? 0)}</h3>
+          )}
+        </div>
+        <div className="mt-4 text-[10px] text-zinc-500 flex items-center gap-1.5">
+          <ClipboardList className="h-4 w-4 text-zinc-650" />
+          <span>Pengeluaran belanja riil ter-update otomatis</span>
+        </div>
+      </Card>
+
+      {/* Orders Navigation Short Link (Best Practice Accessibility) */}
+      <Card className="border-zinc-800 bg-zinc-900/30 p-6 flex flex-col justify-between">
+        <div className="space-y-1">
+          <span className="text-xs text-zinc-500 font-semibold uppercase tracking-wider block">Pesanan Saya</span>
           <h3 className="text-xs font-semibold text-zinc-400 pt-1">Pantau & lacak pengiriman pesanan Anda</h3>
+        </div>
+        <div className="mt-4 flex items-center justify-between">
           <Link
             href="/orders"
-            className="inline-flex items-center gap-1 text-xs font-bold text-indigo-400 hover:underline pt-2"
+            className="inline-flex items-center gap-1 text-xs font-bold text-indigo-400 hover:underline"
           >
             Lihat Transaksi <ClipboardList className="h-3.5 w-3.5" />
           </Link>
-        </div>
-        <div className="h-12 w-12 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center">
-          <Wallet className="h-6 w-6" />
+          <div className="h-8 w-8 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center shrink-0">
+            <Wallet className="h-4.5 w-4.5" />
+          </div>
         </div>
       </Card>
 
