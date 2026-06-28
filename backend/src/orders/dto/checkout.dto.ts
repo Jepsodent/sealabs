@@ -1,5 +1,5 @@
 import { DeliveryMethod } from "@prisma/client";
-import { IsEnum, IsNotEmpty, IsString } from "class-validator";
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 
 
@@ -11,5 +11,10 @@ export class CheckoutDto{
 
     @IsEnum(DeliveryMethod)
     deliveryMethod: DeliveryMethod
+
+    @IsOptional()
+    @IsString()
+    discountCode: string
+
     
 }

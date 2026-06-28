@@ -122,6 +122,7 @@ model CartItem {
   createdAt DateTime @default(now())
 
   @@unique([userId, productId])
+  @@map("cart_items")
 }
 
 enum DeliveryMethod {
@@ -136,6 +137,11 @@ enum DeliveryStatus {
   SEDANG_DIKIRIM
   PESANAN_SELESAI
   DIKEMBALIKAN
+}
+
+enum DiscountType {
+  VOUCHER
+  PROMO
 }
 
 model Order {
@@ -154,8 +160,15 @@ model Order {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
+  //level 4 
+  discount     Int           @default(0)
+  discountCode String?
+  discountType DiscountType?
+
   orderItem          OrderItem[]
   orderStatusHistory OrderStatusHistory[]
+
+  @@map("orders")
 }
 
 model OrderItem {
@@ -166,6 +179,8 @@ model OrderItem {
   product   Product @relation(references: [id], fields: [productId])
   price     Int //snapshot harga waktu di catat bukan harga tergantung id
   quantity  Int
+
+  @@map("order_items")
 }
 
 model OrderStatusHistory {
@@ -174,4 +189,29 @@ model OrderStatusHistory {
   status    DeliveryStatus
   timestamp DateTime       @default(now())
   order     Order          @relation(fields: [orderId], references: [id])
+
+  @@map("order_status_histories")
+}
+
+model Voucher {
+  id             String   @id @default(uuid())
+  code           String   @unique
+  discountValue  Int
+  isPercent      Boolean
+  expiryDate     DateTime
+  remainingUsage Int
+  createdAt      DateTime @default(now())
+
+  @@map("vourchers")
+}
+
+model Promo {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  discountValue Int
+  isPercent     Boolean
+  expiryDate    DateTime
+  createdAt     DateTime @default(now())
+
+  @@map("promos")
 }
