@@ -65,6 +65,16 @@ export function SellerDashboard({ formatRupiah }: SellerDashboardProps) {
     enabled: !!myStore,
   });
 
+  // Fetch Seller Revenue Report
+  const { data: sellerReport, isLoading: isLoadingReport } = useQuery<{ revenue: number }>({
+    queryKey: ['seller-report'],
+    queryFn: async () => {
+      const response = await api.get('/reports/seller');
+      return response.data;
+    },
+    enabled: !!myStore,
+  });
+
   const openAddProduct = () => {
     setSelectedProduct(null);
     setIsProductModalOpen(true);
@@ -104,6 +114,8 @@ export function SellerDashboard({ formatRupiah }: SellerDashboardProps) {
         products={products}
         formatRupiah={formatRupiah}
         refetchStore={refetchStore}
+        sellerReport={sellerReport}
+        isLoadingReport={isLoadingReport}
       />
 
       {/* Tabs Navigation */}

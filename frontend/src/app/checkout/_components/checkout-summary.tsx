@@ -33,6 +33,16 @@ interface CheckoutSummaryProps {
   isCheckoutPending: boolean;
   selectedAddressId: string;
   refetchWallet: () => void;
+  appliedDiscount: {
+    code: string;
+    discountValue: number;
+    isPercent: boolean;
+    type: 'VOUCHER' | 'PROMO';
+  } | null;
+  discountAmount: number;
+  onApplyDiscount: (code: string) => Promise<void>;
+  onRemoveDiscount: () => void;
+  isApplyingDiscount: boolean;
 }
 
 const topUpSchema = z.object({
@@ -53,7 +63,13 @@ export function CheckoutSummary({
   isCheckoutPending,
   selectedAddressId,
   refetchWallet,
+  appliedDiscount,
+  discountAmount,
+  onApplyDiscount,
+  onRemoveDiscount,
+  isApplyingDiscount,
 }: CheckoutSummaryProps) {
+  const [discountCodeText, setDiscountCodeText] = useState('');
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
 
   const buyerBalance = wallet?.balance ?? 0;
@@ -90,15 +106,75 @@ export function CheckoutSummary({
     topUpMutation.mutate(data);
   };
 
+  const handleApplyClick = () => {
+    if (!discountCodeText.trim()) {
+      toast.error('Masukkan kode diskon terlebih dahulu!');
+      return;
+    }
+    onApplyDiscount(discountCodeText.trim());
+  };
+
+  const handleCancelClick = () => {
+    onRemoveDiscount();
+    setDiscountCodeText('');
+  };
+
   return (
     <Card className="border-zinc-800 bg-zinc-900/30 p-6 space-y-6 sticky top-24">
       <h3 className="text-base font-bold text-white border-b border-zinc-800/60 pb-3">Ringkasan Pembayaran</h3>
+
+      {/* Input Kode Diskon */}
+      <div className="space-y-2">
+        <Label htmlFor="discountCode" className="text-xs font-semibold text-zinc-300 uppercase">
+          Kode Voucher / Promo
+        </Label>
+        <div className="flex gap-2">
+          <Input
+            id="discountCode"
+            placeholder="Contoh: DISKON20"
+            value={discountCodeText}
+            onChange={(e) => setDiscountCodeText(e.target.value)}
+            disabled={!!appliedDiscount || isApplyingDiscount}
+            className="border-zinc-800 bg-zinc-950 text-white placeholder-zinc-700 text-xs focus-visible:ring-indigo-500"
+          />
+          {appliedDiscount ? (
+            <Button
+              type="button"
+              onClick={handleCancelClick}
+              variant="destructive"
+              className="px-4 text-xs font-bold shrink-0 cursor-pointer h-9"
+            >
+              Lepas
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleApplyClick}
+              disabled={isApplyingDiscount}
+              className="bg-indigo-600 hover:bg-indigo-755 text-white px-4 text-xs font-bold shrink-0 cursor-pointer h-9"
+            >
+              {isApplyingDiscount ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Gunakan'}
+            </Button>
+          )}
+        </div>
+        {appliedDiscount && (
+          <p className="text-[10px] text-emerald-400 font-medium">
+            Terpasang: {appliedDiscount.type} - {appliedDiscount.code} ({appliedDiscount.isPercent ? `${appliedDiscount.discountValue}%` : formatRupiah(appliedDiscount.discountValue)})
+          </p>
+        )}
+      </div>
 
       <div className="space-y-3.5 text-xs">
         <div className="flex justify-between text-zinc-400">
           <span>Subtotal Barang</span>
           <span className="font-semibold text-white">{formatRupiah(subTotal)}</span>
         </div>
+        {appliedDiscount && (
+          <div className="flex justify-between text-emerald-400 font-semibold animate-fadeIn">
+            <span>Potongan Diskon ({appliedDiscount.code})</span>
+            <span>-{formatRupiah(discountAmount)}</span>
+          </div>
+        )}
         <div className="flex justify-between text-zinc-400">
           <span>Ongkos Kirim</span>
           <span className="font-semibold text-white">{formatRupiah(shippingFee)}</span>

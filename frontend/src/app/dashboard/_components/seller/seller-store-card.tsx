@@ -28,6 +28,8 @@ interface SellerStoreCardProps {
   products: Product[];
   formatRupiah: (amount: number) => string;
   refetchStore: () => void;
+  sellerReport?: { revenue: number };
+  isLoadingReport?: boolean;
 }
 
 const storeSchema = z.object({
@@ -42,6 +44,8 @@ export function SellerStoreCard({
   products,
   formatRupiah,
   refetchStore,
+  sellerReport,
+  isLoadingReport,
 }: SellerStoreCardProps) {
   const [isEditStoreOpen, setIsEditStoreOpen] = useState(false);
 
@@ -127,8 +131,12 @@ export function SellerStoreCard({
       <Card className="border-zinc-800 bg-zinc-900/30 p-6 flex flex-col justify-between">
         <div className="space-y-1">
           <span className="text-xs text-zinc-500 font-semibold uppercase block">Pendapatan Toko</span>
-          <h3 className="text-3xl font-black text-white">{formatRupiah(12500000)}</h3>
-          <p className="text-xs text-zinc-500 pt-1">Simulasi Pendapatan Level 2</p>
+          {isLoadingReport ? (
+            <div className="h-9 w-32 bg-zinc-800 animate-pulse rounded mt-1" />
+          ) : (
+            <h3 className="text-2xl font-black text-white">{formatRupiah(sellerReport?.revenue ?? 0)}</h3>
+          )}
+          <p className="text-xs text-zinc-500 pt-1">Total akumulasi omset penjualan</p>
         </div>
         <div className="flex justify-between items-center text-xs py-2 border-t border-zinc-800/40 mt-4 text-zinc-400">
           <span>Total Produk</span>

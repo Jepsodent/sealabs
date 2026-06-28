@@ -38,6 +38,15 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('REGULAR');
 
+  // Discount states
+  const [appliedDiscount, setAppliedDiscount] = useState<{
+    code: string;
+    discountValue: number;
+    isPercent: boolean;
+    type: 'VOUCHER' | 'PROMO';
+  } | null>(null);
+  const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
+
   // --- QUERY FETCHERS ---
   const { data: cart, isLoading: isLoadingCart } = useQuery<CartResponse>({
     queryKey: ['cart'],
@@ -66,17 +75,17 @@ export default function CheckoutPage() {
     enabled: isBuyer,
   });
 
-  // Automatically select default address
-  useEffect(() => {
-    if (addresses.length > 0) {
-      const defaultAddr = addresses.find((addr) => addr.isDefault);
-      if (defaultAddr) {
-        setSelectedAddressId(defaultAddr.id);
-      } else {
-        setSelectedAddressId(addresses[0].id);
-      }
+  // Automatically select default address (derived during render)
+  const activeAddressId = React.useMemo(() => {
+    if (addresses.length === 0) return '';
+    const currentExists = addresses.some((addr) => addr.id === selectedAddressId);
+    if (selectedAddressId && currentExists) {
+      return selectedAddressId;
     }
-  }, [addresses]);
+    const defaultAddr = addresses.find((addr) => addr.isDefault);
+    return defaultAddr ? defaultAddr.id : addresses[0].id;
+  }, [addresses, selectedAddressId]);
+
 
   // Redirect to cart if empty
   useEffect(() => {
@@ -89,8 +98,9 @@ export default function CheckoutPage() {
   const checkoutMutation = useMutation({
     mutationFn: async () => {
       const response = await api.post('/orders/checkout', {
-        addressId: selectedAddressId,
+        addressId: activeAddressId,
         deliveryMethod: deliveryMethod,
+        discountCode: appliedDiscount?.code || undefined,
       });
       return response.data;
     },
@@ -106,6 +116,26 @@ export default function CheckoutPage() {
       toast.error(typeof msg === 'string' ? msg : 'Gagal melakukan checkout.');
     },
   });
+
+  const handleApplyDiscount = async (code: string) => {
+    setIsApplyingDiscount(true);
+    try {
+      const response = await api.get(`/discounts/validate/${code}`);
+      setAppliedDiscount(response.data);
+      toast.success(`Diskon ${code} berhasil dipasang!`);
+    } catch (error: any) {
+      const msg = error.response?.data?.message || 'Kode diskon tidak valid atau telah kadaluwarsa.';
+      toast.error(typeof msg === 'string' ? msg : 'Kode diskon tidak valid.');
+      setAppliedDiscount(null);
+    } finally {
+      setIsApplyingDiscount(false);
+    }
+  };
+
+  const handleRemoveDiscount = () => {
+    setAppliedDiscount(null);
+    toast.info('Diskon dilepas.');
+  };
 
   const formatRupiah = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -144,8 +174,21 @@ export default function CheckoutPage() {
   // Calculations
   const subTotal = cart?.subTotal ?? 0;
   const shippingFee = DeliveryPrice[deliveryMethod];
-  const taxAmount = Math.floor(subTotal * ppnTax);
-  const totalAmount = subTotal + shippingFee + taxAmount;
+
+  // Calculate discount amount
+  let discountAmount = 0;
+  if (appliedDiscount) {
+    if (appliedDiscount.isPercent) {
+      discountAmount = Math.floor((subTotal * appliedDiscount.discountValue) / 100);
+    } else {
+      discountAmount = appliedDiscount.discountValue;
+    }
+    // Limit to subtotal
+    discountAmount = Math.min(discountAmount, subTotal);
+  }
+
+  const taxAmount = Math.floor((subTotal - discountAmount) * ppnTax);
+  const totalAmount = (subTotal - discountAmount) + shippingFee + taxAmount;
 
   return (
     <div className="flex-1 w-full bg-zinc-950 px-4 py-12 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
@@ -167,7 +210,7 @@ export default function CheckoutPage() {
         <div className="lg:col-span-8 space-y-6">
           <CheckoutAddress
             addresses={addresses}
-            selectedAddressId={selectedAddressId}
+            selectedAddressId={activeAddressId}
             setSelectedAddressId={setSelectedAddressId}
             refetchAddresses={refetchAddresses}
           />
@@ -196,8 +239,13 @@ export default function CheckoutPage() {
             formatRupiah={formatRupiah}
             onCheckout={() => checkoutMutation.mutate()}
             isCheckoutPending={checkoutMutation.isPending}
-            selectedAddressId={selectedAddressId}
+            selectedAddressId={activeAddressId}
             refetchWallet={refetchWallet}
+            appliedDiscount={appliedDiscount}
+            discountAmount={discountAmount}
+            onApplyDiscount={handleApplyDiscount}
+            onRemoveDiscount={handleRemoveDiscount}
+            isApplyingDiscount={isApplyingDiscount}
           />
         </div>
       </div>

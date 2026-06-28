@@ -8,6 +8,17 @@ export class AddressesService {
     constructor(private readonly prisma: PrismaService){}
 
     async createAddress(userId: string, dto: CreateAddressDto){
+        // perbaikan jika address mau unique harus ditambah juga di schema db unique di label / full addressnya
+        // const address = await this.prisma.address.findUnique({
+        //     where:{ 
+        //         label: dto.label,
+        //         userId,
+        //     }
+        // })
+        // if(address){
+        //     throw new ConflictException('Alamat sudah terdaftar!')
+        // }
+
         const result = await this.prisma.$transaction(async (tx) => {
             if (dto.isDefault){
                 await tx.address.updateMany({
