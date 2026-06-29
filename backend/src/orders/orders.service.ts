@@ -4,7 +4,7 @@ import { CheckoutDto } from './dto/checkout.dto';
 import { CartService } from 'src/cart/cart.service';
 import { DeliveryPrice, ppnTax } from 'src/common/delivery.constant';
 import { WalletService } from 'src/wallet/wallet.service';
-import { DeliveryStatus, DiscountType, TransactionType } from '@prisma/client';
+import { DeliveryJobStatus, DeliveryStatus, DiscountType, TransactionType } from '@prisma/client';
 
 @Injectable()
 
@@ -163,7 +163,14 @@ export class OrdersService {
                                 product: true,
                             }
                         },
-                        orderStatusHistory:true
+                        orderStatusHistory:true,
+                        deliveryJob: {
+                            select: {
+                                driver: {
+                                    select: {username:true}
+                                }
+                            }
+                        }
                     },
                     orderBy: {
                         createdAt: 'desc'
@@ -191,6 +198,13 @@ export class OrdersService {
                         orderStatusHistory:true,
                         buyer: {
                             select: {address: true, username:true}
+                        },
+                        deliveryJob: {
+                            select: {
+                                driver: {
+                                    select: {username:true}
+                                }
+                            }
                         }
                     },
                     orderBy: {
@@ -232,6 +246,12 @@ export class OrdersService {
                 data: {
                     orderId,
                     status: DeliveryStatus.MENUNGGU_PENGIRIM
+                }
+            })
+            await tx.deliveryJob.create({
+                data: {
+                    orderId,
+                    status: DeliveryJobStatus.AVAILABLE,
                 }
             })
             return tx.order.findUnique({where: {id: orderId}})
