@@ -163,7 +163,14 @@ export class OrdersService {
                                 product: true,
                             }
                         },
-                        orderStatusHistory:true
+                        orderStatusHistory:true,
+                        deliveryJob: {
+                            select: {
+                                driver: {
+                                    select: {username:true}
+                                }
+                            }
+                        }
                     },
                     orderBy: {
                         createdAt: 'desc'
@@ -191,6 +198,13 @@ export class OrdersService {
                         orderStatusHistory:true,
                         buyer: {
                             select: {address: true, username:true}
+                        },
+                        deliveryJob: {
+                            select: {
+                                driver: {
+                                    select: {username:true}
+                                }
+                            }
                         }
                     },
                     orderBy: {

@@ -22,6 +22,11 @@ export class DeliveriesService {
                             select:{
                                 name: true
                             }
+                        },
+                        buyer: {
+                            select:{
+                                username: true
+                            }
                         }
                     }
                     
@@ -189,9 +194,14 @@ export class DeliveriesService {
                             select:{
                                 name: true
                             }
+                        },
+                        buyer: {
+                            select:{
+                                username: true
+                            }
                         }
                     }
-                }
+                },
             }
         })
     }
