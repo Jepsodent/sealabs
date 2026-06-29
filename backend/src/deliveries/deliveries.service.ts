@@ -14,10 +14,17 @@ export class DeliveriesService {
             },
             include: {
                 order: {
-                    select: {deliveryAddress: true, deliveryMethod: true, deliveryFee: true},
-                    include:{
-                        store: {select: {name: true}}
+                    select: {
+                        deliveryAddress: true,
+                        deliveryMethod: true,
+                        deliveryFee:true,
+                        store: {
+                            select:{
+                                name: true
+                            }
+                        }
                     }
+                    
                 }
             }
         })
@@ -163,4 +170,30 @@ export class DeliveriesService {
         })
         return result
     }
+
+    async getAllMyJob(userId:string){
+        return this.prisma.deliveryJob.findMany({
+            where: {
+                driverId: userId,
+                status: {
+                    not: DeliveryJobStatus.AVAILABLE
+                }
+            },
+            include: {
+                order: {
+                    select: {
+                        deliveryAddress: true,
+                        deliveryMethod: true,
+                        deliveryFee:true,
+                        store: {
+                            select:{
+                                name: true
+                            }
+                        }
+                    }
+                }
+            }
+        })
+    }
+
 }

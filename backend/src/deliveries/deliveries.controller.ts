@@ -17,6 +17,11 @@ export class DeliveriesController {
         return this.deliveryService.getAllDeliveryJob()
     }
 
+    @Get('my-jobs')
+    async getAllMyJob(@CurrentUser() user:SafeUser){
+        return this.deliveryService.getAllMyJob(user.id)
+    }
+
     @Get(':id')
     async getDeliveryDetail(@Param('id') id:string){
         return this.deliveryService.getDeliveryDetail(id)
