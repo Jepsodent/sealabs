@@ -14,9 +14,10 @@ import { OrdersModule } from './orders/orders.module';
 import { DiscountsModule } from './discounts/discounts.module';
 import { ReportsModule } from './reports/reports.module';
 import { DeliveriesModule } from './deliveries/deliveries.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
-  imports: [PrismaModule, ConfigModule, AuthModule, ReviewsModule, ProductsModule, StoresModule, WalletModule, AddressesModule, CartModule, OrdersModule, DiscountsModule, ReportsModule, DeliveriesModule],
+  imports: [PrismaModule, ConfigModule, AuthModule, ReviewsModule, ProductsModule, StoresModule, WalletModule, AddressesModule, CartModule, OrdersModule, DiscountsModule, ReportsModule, DeliveriesModule, AdminModule],
   controllers: [AppController],
   providers: [AppService],
 })
