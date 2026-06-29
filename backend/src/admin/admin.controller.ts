@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, UseGuards } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { CurrentRole } from 'src/auth/decorator/current-role.decorator';
 import { RoleGuard } from 'src/auth/guards/active-role.guard';
@@ -20,5 +20,14 @@ export class AdminController {
     @Post('advance-time')
     async updateTime(@Body() dto:UpdateTimeDto){
         return this.adminService.updateTime(dto)
+    }
+    @Put('reset')
+    async resetTime(){
+        return this.adminService.resetTime()
+    }
+
+    @Post("check-overdue")
+    async checkOverdue(){
+        return this.adminService.checkOverdue()
     }
 }

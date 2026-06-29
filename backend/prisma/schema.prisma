@@ -223,6 +223,7 @@ enum DeliveryJobStatus {
   AVAILABLE
   TAKEN
   COMPLETED
+  CANCELLED
 }
 
 model DeliveryJob {
