@@ -30,4 +30,10 @@ export class AdminController {
     async checkOverdue(){
         return this.adminService.checkOverdue()
     }
+
+    @Get("monitoring")
+    async getDashboardData(){
+        return this.adminService.getData()
+    }
+
 }

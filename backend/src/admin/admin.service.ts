@@ -8,7 +8,78 @@ import { DeliveryTime } from 'src/common/delivery.constant';
 export class AdminService {
 
     constructor(private readonly prisma:PrismaService){}
+    
+    async getData(){
+        const totalUser = await this.prisma.user.groupBy({
+            by: ['roles'],
+            _count: {
+                id: true
+            }
+        })
+        const totalStore = await this.prisma.store.count()
+        const totalProduct = await this.prisma.product.count()
+        const totalOrder = await this.prisma.order.groupBy({
+            by: ['status'],
+            _count: {
+                id: true
+            }
+        })
 
+        const systemTime = await this.getSystemTime()
+        const vouchers = await this.prisma.voucher.findMany({
+            orderBy: {
+                createdAt: 'desc'
+            }
+        })
+        const mappedVoucher = vouchers.map(voucher => ({
+            ...voucher,
+            isExpired: systemTime.getTime() > voucher.expiryDate.getTime()
+        }))
+        const promos = await this.prisma.promo.findMany({
+            orderBy: {
+                createdAt: 'desc'
+            }
+        })
+        const mappedPromos = promos.map(promo => ({
+            ...promo,
+            isExpired: systemTime.getTime() > promo.expiryDate.getTime()
+        }))
+
+
+
+        const activeDeliveryJob = await this.prisma.deliveryJob.findMany({
+            where: {
+                status: DeliveryJobStatus.TAKEN
+            },
+            include: {
+                order: {
+                    select:{ 
+                        deliveryAddress: true,
+                        total:true
+                    }
+                },
+                driver: {
+                    select: {
+                        username:true
+                    }
+                }
+            }
+        })
+
+        return {
+            totalUser,
+            totalStore,
+            totalProduct,
+            totalOrder,
+            activeDeliveryJob,
+            vouchers: mappedVoucher,
+            promos: mappedPromos,
+            
+        }
+
+
+
+    }
     async getSystemTime(){
         const config = await this.prisma.systemConfig.findUnique({
             where: {
