@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateTimeDto } from './dto/update-time.dto';
 import { DeliveryJobStatus, DeliveryStatus, TransactionType } from '@prisma/client';
 import { DeliveryTime } from 'src/common/delivery.constant';
+import { getSystemTime } from 'src/common/time.helper';
 
 @Injectable()
 export class AdminService {
@@ -25,7 +26,7 @@ export class AdminService {
             }
         })
 
-        const systemTime = await this.getSystemTime()
+        const systemTime = await getSystemTime(this.prisma)
         const vouchers = await this.prisma.voucher.findMany({
             orderBy: {
                 createdAt: 'desc'
@@ -80,15 +81,6 @@ export class AdminService {
 
 
     }
-    async getSystemTime(){
-        const config = await this.prisma.systemConfig.findUnique({
-            where: {
-                id: "time_config"
-            }
-        })
-        const offsetDate = (config?.virtualTimeOffsetDays || 0) * 24 * 60 * 60 * 1000
-        return new Date(Date.now() + offsetDate)
-    }
 
     async updateTime(dto: UpdateTimeDto){
         return this.prisma.systemConfig.update({
@@ -114,7 +106,7 @@ export class AdminService {
     }
 
     async checkOverdue(){
-        const systemTime = await this.getSystemTime()
+        const systemTime = await getSystemTime(this.prisma)
         const activeOrders = await this.prisma.order.findMany({
             where: {
                 status: {
