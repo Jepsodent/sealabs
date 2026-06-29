@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { TopUpDto } from './dto/top-up.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TransactionType } from '@prisma/client';
+import { getSystemTime } from 'src/common/time.helper';
 
 @Injectable()
 export class WalletService {
@@ -20,11 +21,13 @@ export class WalletService {
 
                 }
             })
+            const systemTime = await getSystemTime(tx)
             const transactionLog = await tx.walletTransaction.create({
                 data: {
                     amount: dto.amount,
                     userId, 
-                    type: TransactionType.TOP_UP
+                    type: TransactionType.TOP_UP,
+                    createdAt: systemTime
                 }
             })
             return {updateSaldo, transactionLog}
@@ -47,11 +50,13 @@ export class WalletService {
                     }
                 }
             })
+            const systemTime = await getSystemTime(tx)
             await tx.walletTransaction.create({
                 data: {
                     amount: price,
                     userId,
-                    type: TransactionType.PAYMENT
+                    type: TransactionType.PAYMENT,
+                    createdAt: systemTime
                 }
             })
             return updateSaldo

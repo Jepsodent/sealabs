@@ -69,6 +69,15 @@ export class AdminService {
             }
         })
 
+        const recentOrders = await this.prisma.order.findMany({
+            take: 10,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                buyer: { select: { username: true } },
+                store: { select: { name: true } }
+            }
+        });
+
         return {
             totalUser,
             totalStore,
@@ -77,7 +86,7 @@ export class AdminService {
             activeDeliveryJob,
             vouchers: mappedVoucher,
             promos: mappedPromos,
-            
+            recentOrders
         }
 
 
