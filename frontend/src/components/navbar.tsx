@@ -99,6 +99,16 @@ export function Navbar() {
                 Dasbor
               </Link>
             )}
+            {user && user.activeRole === 'ADMIN' && (
+              <Link
+                href="/admin"
+                className={`text-sm font-medium transition-colors hover:text-white ${
+                  pathname.startsWith('/admin') ? 'text-white font-semibold' : 'text-zinc-400'
+                }`}
+              >
+                Admin Panel
+              </Link>
+            )}
           </nav>
         </div>
 
@@ -269,6 +279,17 @@ export function Navbar() {
                 }`}
               >
                 Dasbor
+              </Link>
+            )}
+            {user && user.activeRole === 'ADMIN' && (
+              <Link
+                href="/admin"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`text-sm font-medium transition-colors hover:text-white ${
+                  pathname.startsWith('/admin') ? 'text-white' : 'text-zinc-400'
+                }`}
+              >
+                Admin Panel
               </Link>
             )}
           </nav>
