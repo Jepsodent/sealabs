@@ -89,7 +89,7 @@ export function Navbar() {
                 </Link>
               );
             })}
-            {user && (
+            {user && user.activeRole !== 'ADMIN' && (
               <Link
                 href="/dashboard"
                 className={`text-sm font-medium transition-colors hover:text-white ${
@@ -97,6 +97,16 @@ export function Navbar() {
                 }`}
               >
                 Dasbor
+              </Link>
+            )}
+            {user && user.activeRole === 'ADMIN' && (
+              <Link
+                href="/admin"
+                className={`text-sm font-medium transition-colors hover:text-white ${
+                  pathname.startsWith('/admin') ? 'text-white font-semibold' : 'text-zinc-400'
+                }`}
+              >
+                Admin Panel
               </Link>
             )}
           </nav>
@@ -260,7 +270,7 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
-            {user && (
+            {user && user.activeRole !== 'ADMIN' && (
               <Link
                 href="/dashboard"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -269,6 +279,17 @@ export function Navbar() {
                 }`}
               >
                 Dasbor
+              </Link>
+            )}
+            {user && user.activeRole === 'ADMIN' && (
+              <Link
+                href="/admin"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`text-sm font-medium transition-colors hover:text-white ${
+                  pathname.startsWith('/admin') ? 'text-white' : 'text-zinc-400'
+                }`}
+              >
+                Admin Panel
               </Link>
             )}
           </nav>

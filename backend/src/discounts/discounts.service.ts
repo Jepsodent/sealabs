@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePromoDto } from './dto/create-promo.dto';
 import { CreateVoucerDto } from './dto/create-voucer.dto';
 import { DiscountType } from '@prisma/client';
+import { getSystemTime } from 'src/common/time.helper';
 
 @Injectable()
 export class DiscountsService {
@@ -66,12 +67,13 @@ export class DiscountsService {
 
     async getValidateCode(code: string) {
         const voucher = await this.prisma.voucher.findUnique({ where: { code } })
+        const systemDate = await getSystemTime(this.prisma)
         if (!voucher) {
             const promo = await this.prisma.promo.findUnique({ where: { code } })
             if (!promo) {
                 throw new NotFoundException('Kode diskon tidak ditemukan')
             }
-            if (promo.expiryDate < new Date()) {
+            if (promo.expiryDate < systemDate) {
                 throw new BadRequestException('Kode diskon sudah kadaluwarsa')
             }
 
@@ -80,7 +82,7 @@ export class DiscountsService {
                 type: DiscountType.PROMO
             }
         }
-        if (voucher.expiryDate < new Date()) throw new BadRequestException('Kode diskon sudah kadaluwarsa')
+        if (voucher.expiryDate < systemDate) throw new BadRequestException('Kode diskon sudah kadaluwarsa')
         if (voucher.remainingUsage <= 0) throw new BadRequestException('Kuota voucher telah habis!')
         return {
             ...voucher,

@@ -5,6 +5,7 @@ import { CartService } from 'src/cart/cart.service';
 import { DeliveryPrice, ppnTax } from 'src/common/delivery.constant';
 import { WalletService } from 'src/wallet/wallet.service';
 import { DeliveryJobStatus, DeliveryStatus, DiscountType, TransactionType } from '@prisma/client';
+import { getSystemTime } from 'src/common/time.helper';
 
 @Injectable()
 
@@ -14,6 +15,7 @@ export class OrdersService {
 
     async checkout(dto:CheckoutDto, userId:string){
         const result = await this.prisma.$transaction(async(tx) => {
+            const systemTime = await getSystemTime(tx)
             //1. ambil cartItem user
             const cartItem = await this.cartService.getCart(userId)
             if (!cartItem || !cartItem.store){
@@ -42,10 +44,12 @@ export class OrdersService {
                     tx.promo.findUnique({where: {code: dto.discountCode}}),
                     tx.voucher.findUnique({where: {code: dto.discountCode}})
                 ])
+                
                 const discount = promo || voucher
                 if(!discount) throw new NotFoundException('Kode diskon tidak valid / tidak ditemukan')
                 
-                if(discount.expiryDate < new Date()) throw new BadRequestException('Kode diskon sudah kadaluwarsa')
+                //ganti jadi systemDate 
+                if(discount.expiryDate < systemTime) throw new BadRequestException('Kode diskon sudah kadaluwarsa')
 
                 if(voucher){
                     discountType = DiscountType.VOUCHER
@@ -90,7 +94,8 @@ export class OrdersService {
                 data: {
                     amount: totalPrice,
                     userId,
-                    type: TransactionType.PAYMENT
+                    type: TransactionType.PAYMENT,
+                    createdAt: systemTime // virtualTime
                 }
             })
             
@@ -124,6 +129,7 @@ export class OrdersService {
                     discountCode: dto.discountCode,
                     discount: discountPrice,
                     discountType,
+                    createdAt: systemTime,// virutal time
 
                     orderItem: {
                         create: cartItem.items.map((item) => ({
@@ -134,7 +140,8 @@ export class OrdersService {
                     },
                     orderStatusHistory: {
                         create: {
-                            status: DeliveryStatus.SEDANG_DIKEMAS
+                            status: DeliveryStatus.SEDANG_DIKEMAS,
+                            timestamp: systemTime
                         }
                     }
                 }
@@ -232,6 +239,7 @@ export class OrdersService {
             throw new BadRequestException('Pesanan tidak dapat diproses lagi!')
         }
         return this.prisma.$transaction(async (tx) => {
+            const systemTime = await getSystemTime(tx)
             const updated = await tx.order.updateMany({
                 where: {
                     id: orderId,
@@ -245,7 +253,8 @@ export class OrdersService {
             await tx.orderStatusHistory.create({
                 data: {
                     orderId,
-                    status: DeliveryStatus.MENUNGGU_PENGIRIM
+                    status: DeliveryStatus.MENUNGGU_PENGIRIM,
+                    timestamp: systemTime
                 }
             })
             await tx.deliveryJob.create({

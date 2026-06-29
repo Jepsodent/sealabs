@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DeliveryJobStatus, DeliveryStatus, TransactionType } from '@prisma/client';
+import { getSystemTime } from 'src/common/time.helper';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -57,6 +58,7 @@ export class DeliveriesService {
 
     async takeDeliveryJob(deliveryId: string, userId:string){
         const result = await this.prisma.$transaction(async(tx) => {
+            const systemTime = await getSystemTime(tx)
             const takenJob = await tx.deliveryJob.findFirst({
                 where:{ 
                     driverId: userId,
@@ -104,7 +106,8 @@ export class DeliveriesService {
             await tx.orderStatusHistory.create({
                 data: {
                     orderId: deliveryJob.orderId,
-                    status: DeliveryStatus.SEDANG_DIKIRIM 
+                    status: DeliveryStatus.SEDANG_DIKIRIM,
+                    timestamp: systemTime
                 }
             })
 
@@ -126,6 +129,7 @@ export class DeliveriesService {
             throw new BadRequestException('Anda tidak bisa mengakses job pengiriman ini!')
         }
         const result  = await this.prisma.$transaction(async(tx) => {
+            const systemTime = await getSystemTime(tx)
             const updatedDelivery = await tx.deliveryJob.updateMany({
                 where:{ 
                     id: deliveryId,
@@ -147,7 +151,8 @@ export class DeliveriesService {
             await tx.orderStatusHistory.create({
                 data: {
                     status: DeliveryStatus.PESANAN_SELESAI,
-                    orderId: deliveryJob.orderId
+                    orderId: deliveryJob.orderId,
+                    timestamp: systemTime
                 }
             })
 
@@ -162,7 +167,8 @@ export class DeliveriesService {
                 data: {
                     userId,
                     type: TransactionType.DRIVER_EARNING,
-                    amount: order.deliveryFee
+                    amount: order.deliveryFee,
+                    createdAt: systemTime
                 }
             })
             return tx.deliveryJob.findUnique({
