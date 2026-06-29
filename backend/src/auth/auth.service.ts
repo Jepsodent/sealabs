@@ -62,7 +62,6 @@ export class AuthService {
             throw new UnauthorizedException("Username atau Password salah")
         }
 
-        // BLM DI GENERATE PRISMA DAN DI MIGRATIONS
         const payload = {
             sub: existedUser.id,
             username: existedUser.username,
