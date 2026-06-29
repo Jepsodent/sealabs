@@ -103,7 +103,10 @@ export interface Order {
   createdAt: string;
   buyer?: {
     username: string;
-  };
+  } | null;
+  store?: {
+    name: string;
+  } | null;
   orderItem: OrderItem[];
   orderStatusHistory: OrderStatusHistory[];
   discount?: number;
@@ -113,5 +116,42 @@ export interface Order {
     driver?: {
       username: string;
     } | null;
+  } | null;
+}
+
+export interface Voucher {
+  id: string;
+  code: string;
+  discountValue: number;
+  isPercent: boolean;
+  expiryDate: string;
+  remainingUsage: number;
+  createdAt: string;
+  isExpired?: boolean;
+}
+
+export interface Promo {
+  id: string;
+  code: string;
+  discountValue: number;
+  isPercent: boolean;
+  expiryDate: string;
+  createdAt: string;
+  isExpired?: boolean;
+}
+
+export interface DeliveryJob {
+  id: string;
+  orderId: string;
+  driverId: string | null;
+  status: 'AVAILABLE' | 'TAKEN' | 'COMPLETED' | 'CANCELLED';
+  createdAt: string;
+  updatedAt: string;
+  order?: {
+    deliveryAddress: string;
+    total: number;
+  } | null;
+  driver?: {
+    username: string;
   } | null;
 }
