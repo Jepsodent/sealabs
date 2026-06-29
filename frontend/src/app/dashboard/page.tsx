@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth, Role } from '@/context/auth-context';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Shield, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -11,16 +12,22 @@ import { toast } from 'sonner';
 import { BuyerDashboard } from './_components/buyer-dashboard';
 import { SellerDashboard } from './_components/seller-dashboard';
 import { DriverDashboard } from './_components/driver-dashboard';
-import { AdminDashboard } from './_components/admin-dashboard';
 
 export default function DashboardPage() {
   const { user, isLoading, updateActiveRole } = useAuth();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (user && user.activeRole === 'ADMIN') {
+      router.push('/admin');
+    }
+  }, [user, router]);
 
   const handleQuickRoleChange = async (role: Role) => {
     try {
       await updateActiveRole(role);
       toast.success(`Role aktif diubah ke ${role}`);
-    } catch (error) {
+    } catch {
       toast.error('Gagal mengubah role aktif');
     }
   };
@@ -66,7 +73,12 @@ export default function DashboardPage() {
       case 'DRIVER':
         return <DriverDashboard formatRupiah={formatRupiah} />;
       case 'ADMIN':
-        return <AdminDashboard formatRupiah={formatRupiah} />;
+        return (
+          <div className="flex flex-col items-center justify-center py-20 text-zinc-550 gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+            <span className="text-sm font-medium">Mengarahkan ke Admin Panel...</span>
+          </div>
+        );
       default:
         return (
           <Card className="border-zinc-800 bg-zinc-900/20 p-8 text-center">

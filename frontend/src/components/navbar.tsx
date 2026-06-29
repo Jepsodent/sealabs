@@ -89,7 +89,7 @@ export function Navbar() {
                 </Link>
               );
             })}
-            {user && (
+            {user && user.activeRole !== 'ADMIN' && (
               <Link
                 href="/dashboard"
                 className={`text-sm font-medium transition-colors hover:text-white ${
@@ -270,7 +270,7 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
-            {user && (
+            {user && user.activeRole !== 'ADMIN' && (
               <Link
                 href="/dashboard"
                 onClick={() => setIsMobileMenuOpen(false)}
