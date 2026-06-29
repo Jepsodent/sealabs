@@ -9,7 +9,9 @@ import { getSystemTime } from 'src/common/time.helper';
 export class AdminService {
 
     constructor(private readonly prisma:PrismaService){}
-    
+    async getSystemTime(){
+        return getSystemTime(this.prisma)
+    }
     async getData(){
         const totalUser = await this.prisma.user.groupBy({
             by: ['roles'],
