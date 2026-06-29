@@ -237,3 +237,11 @@ model DeliveryJob {
 
   @@map("delivery_jobs")
 }
+
+model SystemConfig {
+  id                    String   @id @default("time_config")
+  virtualTimeOffsetDays Int      @default(0)
+  updatedAt             DateTime @updatedAt
+
+  @@map("system_cofig")
+}
