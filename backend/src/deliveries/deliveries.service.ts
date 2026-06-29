@@ -13,7 +13,12 @@ export class DeliveriesService {
                 status: DeliveryJobStatus.AVAILABLE
             },
             include: {
-                order: {select: {deliveryAddress: true, deliveryMethod: true, deliveryFee: true}}
+                order: {
+                    select: {deliveryAddress: true, deliveryMethod: true, deliveryFee: true},
+                    include:{
+                        store: {select: {name: true}}
+                    }
+                }
             }
         })
     }
@@ -27,7 +32,8 @@ export class DeliveriesService {
                             select: {quantity: true, price:true},
                             include: {product: {select: {name: true, imageUrl: true}}}
                         },
-                        store: {select: {name: true}}
+                        store: {select: {name: true}},
+                        buyer: {select:{username: true}}
                     }
                 }
             }
