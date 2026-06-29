@@ -109,4 +109,9 @@ export interface Order {
   discount?: number;
   discountCode?: string | null;
   discountType?: 'VOUCHER' | 'PROMO' | null;
+  deliveryJob?: {
+    driver?: {
+      username: string;
+    } | null;
+  } | null;
 }
