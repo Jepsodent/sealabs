@@ -50,7 +50,7 @@ export function WalletTransactions({
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedTransactions = transactions.slice(startIndex, startIndex + pageSize);
 
-  const isPlusType = (type: string) => type === 'TOP_UP' || type === 'REFUND';
+  const isPlusType = (type: string) => type === 'TOP_UP' || type === 'REFUND' || type ==='DRIVER_EARNING';
 
   return (
     <Card className="border-zinc-800 bg-zinc-900/30">

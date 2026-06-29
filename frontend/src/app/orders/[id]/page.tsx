@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Loader2, CheckCircle, Package, Truck, Calendar, MapPin, Receipt, ShieldAlert } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { ArrowLeft, Loader2, CheckCircle, Package, Truck, Calendar, MapPin, Receipt, ShieldAlert, User } from 'lucide-react';
 
 import { Order } from '@/types';
 
@@ -125,6 +125,24 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 {order.deliveryMethod.replace(/_/g, ' ')} — {formatRupiah(order.deliveryFee)}
               </p>
             </div>
+
+            {/* Driver Info Display */}
+            {order.deliveryJob?.driver?.username && (
+              <div className="p-6 border-b border-zinc-850/45 bg-zinc-950/20 flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">
+                    Kurir Pengantar
+                  </span>
+                  <p className="text-xs text-zinc-200 font-bold capitalize flex items-center gap-1.5">
+                    <User className="h-4 w-4 text-indigo-400" />
+                    {order.deliveryJob.driver.username}
+                  </p>
+                </div>
+                <span className="text-[9px] font-black text-emerald-450 border border-emerald-500/10 bg-emerald-500/5 px-2.5 py-0.5 rounded-full uppercase tracking-wide">
+                  Aktif Mengantar
+                </span>
+              </div>
+            )}
 
             {/* Items List */}
             <div className="p-6 space-y-4">
