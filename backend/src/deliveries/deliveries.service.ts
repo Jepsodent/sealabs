@@ -41,8 +41,7 @@ export class DeliveriesService {
                 order: {
                     include: {
                         orderItem:{
-                            select: {quantity: true, price:true},
-                            include: {product: {select: {name: true, imageUrl: true}}}
+                            select: {quantity: true, price:true, product: {select: {name:true, imageUrl:true}}},
                         },
                         store: {select: {name: true}},
                         buyer: {select:{username: true}}

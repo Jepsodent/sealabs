@@ -10,19 +10,21 @@ import { type SafeUser } from 'src/auth/types/User';
 
 @Controller('wallet')
 @UseGuards(JwtAuthGuard, RoleGuard)
-@CurrentRole(Role.BUYER)
 export class WalletController {
     constructor(private readonly walletService: WalletService){}
+    
+    @CurrentRole(Role.BUYER)
     @Post('top-up')
     async topUp(@CurrentUser() user:SafeUser, @Body() dto:TopUpDto){
         return this.walletService.topUp(user.id, dto)
     }
-
+    @CurrentRole(Role.BUYER, Role.DRIVER)
     @Get('transactions')
     async getTransactionHistory(@CurrentUser() user:SafeUser){
         return this.walletService.getTransactionHistory(user.id)
     }
     @Get()
+    @CurrentRole(Role.BUYER, Role.DRIVER)
     async getWalletBalance(@CurrentUser() user:SafeUser){
         return this.walletService.getWalletBalance(user.id)
     }
