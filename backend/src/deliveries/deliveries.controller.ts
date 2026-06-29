@@ -26,4 +26,8 @@ export class DeliveriesController {
     async takeDeliveryJob(@Param('id') id:string, @CurrentUser() user:SafeUser ){
         return this.deliveryService.takeDeliveryJob(id, user.id)
     }
+    @Put(':id/complete')
+    async completeDeliveryJob(@Param('id') id:string, @CurrentUser() user:SafeUser){
+        return this.deliveryService.completeDeliveryJob(id, user.id)
+    }
 }
