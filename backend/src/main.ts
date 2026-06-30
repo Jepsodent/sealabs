@@ -16,7 +16,7 @@ async function bootstrap() {
     origin:[
       'http://localhost:3001',
       'http://localhost:3000',
-      'https://sealabs.vercel.app/',
+      'https://sealabs.vercel.app',
     ],
     credentials:true
   })
