@@ -52,6 +52,8 @@ model WalletTransaction {
   userId    String
   user      User            @relation(references: [id], fields: [userId], onDelete: Cascade)
   createdAt DateTime        @default(now())
+
+  @@map("wallet_transactions")
 }
 
 model Address {
@@ -62,6 +64,8 @@ model Address {
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
+
+  @@map("address")
 }
 
 model AppReview {

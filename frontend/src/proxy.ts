@@ -6,7 +6,14 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Protect /dashboard routes
-  if (pathname.startsWith('/dashboard')) {
+  if (pathname.startsWith('/dashboard')
+    || pathname.startsWith('/admin')
+    || pathname.startsWith('/cart')
+    || pathname.startsWith('/checkout')
+    || pathname.startsWith('/deliveries')
+    || pathname.startsWith('/orders')
+  
+  ) {
     if (!token) {
       // Redirect to login page and keep the destination URL as a redirect parameter
       const loginUrl = new URL('/login', request.url);
@@ -26,5 +33,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/register'],
+  matcher: ['/dashboard/:path*', '/login', '/register', '/checkout/:path*', '/cart', '/orders/:path*','/deliveries/:path*', '/admin'],
 };
