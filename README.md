@@ -2,7 +2,15 @@
 
 SEAPEDIA adalah platform _e-commerce fullstack_ terintegrasi yang menghubungkan Pembeli (_Buyer_), Penjual (_Seller_), Pengemudi Pengiriman (_Delivery Driver_), dan Administrator (_Admin_) dalam satu ekosistem _marketplace_ multi-toko.
 
-Proyek ini telah melalui proses pengerasan keamanan (_security hardening_) dan finalisasi fitur di **Level 7**.
+---
+
+## 🌐 Tautan Produksi (Live Deployed URLs)
+
+Aplikasi ini telah dideploy secara online dan dapat diakses langsung melalui tautan berikut:
+
+- **Frontend (Vercel):** [https://sealabs.vercel.app](https://sealabs.vercel.app)
+- **Backend (Railway):** [https://sealabs-production.up.railway.app](https://sealabs-production.up.railway.app)
+- **Dokumentasi Swagger (Production):** [https://sealabs-production.up.railway.app/api](https://sealabs-production.up.railway.app/api)
 
 ---
 
@@ -90,7 +98,8 @@ Untuk mempermudah proses penilaian dan demonstrasi, skrip seed telah membuat **s
 
 Backend SEAPEDIA dilengkapi dengan dokumentasi interaktif **Swagger / OpenAPI** yang secara otomatis mencantumkan seluruh rute API.
 
-- **URL Dokumentasi:** [http://localhost:3000/api](http://localhost:3000/api)
+- **URL Dokumentasi Lokal:** [http://localhost:3000/api](http://localhost:3000/api)
+- **URL Dokumentasi Production:** [https://sealabs-production.up.railway.app/api](https://sealabs-production.up.railway.app/api)
 - **Cara Menggunakan Otorisasi di Swagger:**
   1. Lakukan request `POST /auth/login` menggunakan kredensial demo di atas melalui Swagger.
   2. Salin token `accessToken` yang dikembalikan dari respon JSON.
@@ -161,6 +170,8 @@ Backend SEAPEDIA dilengkapi dengan dokumentasi interaktif **Swagger / OpenAPI** 
 - **JWT Expiration:** Masa berlaku JWT diset wajar selama `1d` (24 jam) untuk mengurangi risiko penyalahgunaan token yang tercuri.
 - **Logout Server-Side Invalidation:** Menggunakan mekanisme `tokenVersion`. Saat tombol logout ditekan, backend menaikkan `tokenVersion` user di database. `JwtStrategy` membandingkan version di payload token dengan database; jika berbeda (token lama sesudah logout), request otomatis ditolak dengan `401 Unauthorized`.
 - **Next.js Proxy Route Protection:** Berkas [proxy.ts] (Middleware Next.js 16) mencegat akses rute di level jaringan. Semua rute privat (`/dashboard/*`, `/admin`, `/cart`, `/checkout`, `/orders/*`, `/deliveries/*`) diblokir dan dialihkan langsung ke `/login` jika cookie token otorisasi kosong.
+- **Active Role Verification (Server-Side RBAC):** Otorisasi peran diverifikasi ketat di sisi server. Pengguna dengan multi-role hanya dapat mengakses endpoint yang diizinkan oleh **peran aktifnya saat itu** (misal: jika `activeRole` di database adalah `BUYER`, maka akses ke endpoint khusus `SELLER` atau `DRIVER` otomatis ditolak oleh Guard server-side, meskipun pengguna tersebut memiliki peran tersebut). Endpoint khusus `ADMIN` dilindungi secara absolut dari pengguna non-admin.
+- **Resource Ownership Protection:** Backend memverifikasi kepemilikan data sebelum mengizinkan modifikasi sumber daya. Pengguna dilarang memanipulasi atau mengakses sumber daya milik pengguna lain (misalnya, penjual tidak dapat mengubah produk milik toko lain, pembeli tidak dapat melihat detail pesanan pembeli lain, dan pengemudi tidak dapat menyelesaikan pekerjaan pengiriman milik pengemudi lain). Verifikasi ini dilakukan dengan membandingkan ID pemilik data di database dengan ID pengguna yang terverifikasi dari token JWT.
 
 ---
 
