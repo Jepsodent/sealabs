@@ -12,7 +12,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       super({adapter})
   }
   async onModuleInit() {
-    console.log(this.config.dbUrl)
     // Connect to the database when the module initializes 
     await this.$connect();
   }
