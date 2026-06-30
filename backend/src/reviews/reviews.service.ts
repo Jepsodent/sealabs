@@ -8,12 +8,30 @@ export class ReviewsService {
     constructor(private prisma:PrismaService){}
 
     async createReview(dto: CreateReviewDto){
+
+        // sblmnya sbnrnya sudah aman , karena prisma kita ga raw sql , dan di fe udah ditampilin normal, namun ini cara untuk rplace kata nya biar 
+        const santizedComment = dto.comment
+                                            .replace(/&/g, '&amp;')
+                                            .replace(/</g, '&lt;')
+                                            .replace(/>/g, '&gt;')
+                                            .replace(/"/g, '&quot;')
+                                            .replace(/'/g, '&#x27;');
+        // console.log(santizedComment)
         const reviewName = dto.reviewerName ? dto.reviewerName : "Guest"
+        const santizedReviewName = reviewName
+                                            .replace(/&/g, '&amp;')
+                                            .replace(/</g, '&lt;')
+                                            .replace(/>/g, '&gt;')
+                                            .replace(/"/g, '&quot;')
+                                            .replace(/'/g, '&#x27;');
+        
+
+        // console.log(santizedReviewName)
         return this.prisma.appReview.create({
             data: {
-                comment: dto.comment,
+                comment: santizedComment,
                 rating: dto.rating,
-                reviewerName: reviewName
+                reviewerName: santizedReviewName
             }
         })
     }
