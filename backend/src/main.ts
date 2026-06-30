@@ -13,13 +13,15 @@ async function bootstrap() {
   }
   ))
   app.enableCors({
-    origin:true,
+    origin:[
+      'http://localhost:3001'
+    ],
     credentials:true
   })
   const config = new DocumentBuilder().setTitle("SEAPEDIA API").setDescription('Dokumentasi API untuk SEAPEDIA').setVersion("1.0").addBearerAuth().build();
   const document = SwaggerModule.createDocument(app, config)
   SwaggerModule.setup('api', app ,document)
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
 bootstrap();
